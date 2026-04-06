@@ -1,0 +1,158 @@
+{% extends "layouts/app.html" %}
+{% block title %}Meeting Rooms — Devex AI Studios{% endblock %}
+
+{% block extra_styles %}
+<style>
+.rooms-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px;gap:20px;flex-wrap:wrap}
+.rooms-header-left h1{font-size:22px;font-weight:700;color:#0f172a;margin-bottom:4px}
+.rooms-header-left p{font-size:13px;color:#64748b;line-height:1.5}
+
+.rooms-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:24px}
+.rooms-search{padding:8px 14px;border:1.5px solid #d6e2f0;border-radius:8px;font-size:13px;
+              font-family:'DM Sans',sans-serif;color:#0f172a;outline:none;width:260px;
+              background:#fff;transition:border-color .15s}
+.rooms-search:focus{border-color:#2563eb}
+.rooms-filter{padding:7px 12px;border:1.5px solid #d6e2f0;border-radius:7px;font-size:12px;
+              font-weight:600;cursor:pointer;background:#fff;color:#475569;transition:all .12s;
+              font-family:'DM Sans',sans-serif}
+.rooms-filter:hover{border-color:#93c5fd;color:#1d4ed8}
+.rooms-filter.active{border-color:#2563eb;background:#eaf2ff;color:#1d4ed8}
+
+.rooms-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px}
+
+.room-card{background:#fff;border:1.5px solid #d6e2f0;border-radius:12px;overflow:hidden;
+           text-decoration:none;color:inherit;display:block;transition:border-color .15s,box-shadow .15s}
+.room-card:hover{border-color:#93c5fd;box-shadow:0 4px 20px rgba(37,99,235,.06)}
+
+.room-card-header{background:linear-gradient(135deg,#0d1117,#182539);padding:18px 22px 14px;
+                  display:flex;align-items:center;justify-content:space-between;gap:10px}
+.room-card-title{font-size:15px;font-weight:700;color:#f1f5f9;line-height:1.3}
+.room-card-client{font-size:11px;color:#64788e;margin-top:3px}
+.room-status{padding:3px 10px;border-radius:10px;font-size:10px;font-weight:700;flex-shrink:0}
+.rs-draft{background:rgba(255,255,255,.08);color:#8b949e}
+.rs-in_clarification,.rs-in_review{background:rgba(245,158,11,.15);color:#f59e0b}
+.rs-scoped,.rs-final{background:rgba(34,197,94,.12);color:#22c55e}
+.rs-in_build{background:rgba(37,99,235,.15);color:#60a5fa}
+.rs-delivered,.rs-archived{background:rgba(255,255,255,.06);color:#64748b}
+
+.room-card-body{padding:16px 22px}
+.room-card-meta{display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap}
+.rcm-item{font-size:11px;color:#64748b}
+.rcm-item strong{color:#374151;font-weight:600}
+
+.room-prog{margin-bottom:14px}
+.room-prog-bar{background:#f1f5f9;border-radius:6px;height:5px}
+.room-prog-fill{background:#2563eb;border-radius:6px;height:5px;transition:width .3s}
+.room-prog-label{display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-top:4px}
+
+.room-card-foot{display:flex;align-items:center;justify-content:space-between;padding:0 22px 16px}
+.room-open-btn{padding:6px 16px;border-radius:7px;background:#0f172a;color:#fff;border:none;
+               font-size:12px;font-weight:600;cursor:pointer;transition:background .15s;
+               text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.room-open-btn:hover{background:#1e293b}
+.room-updated{font-size:10px;color:#94a3b8}
+
+.empty-state{text-align:center;padding:80px 40px;background:#fff;border:1.5px dashed #d6e2f0;border-radius:12px}
+.empty-state h3{font-size:18px;font-weight:700;color:#0f172a;margin-bottom:8px}
+.empty-state p{font-size:14px;color:#64748b;margin-bottom:24px;line-height:1.6}
+.btn-primary{padding:10px 20px;border-radius:8px;background:#2563eb;color:#fff;border:none;
+             font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;
+             align-items:center;gap:6px}
+.btn-primary:hover{background:#1d4ed8}
+</style>
+{% endblock %}
+
+{% block sidebar %}
+  {% set active_nav = 'meeting_rooms' %}
+  {% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-title">
+  <h1>Meeting Rooms</h1>
+  <p>Shared project collaboration spaces</p>
+</div>
+<div class="topbar-actions">
+  <a href="/studio/rooms/new" class="btn-primary">+ New Room</a>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="rooms-toolbar">
+  <input class="rooms-search" type="text" placeholder="Search rooms..." id="roomSearch" oninput="filterRooms()">
+  <button class="rooms-filter active" data-filter="all" onclick="setFilter(this,'all')">All</button>
+  <button class="rooms-filter" data-filter="draft" onclick="setFilter(this,'draft')">Draft</button>
+  <button class="rooms-filter" data-filter="in_clarification" onclick="setFilter(this,'in_clarification')">In Clarification</button>
+  <button class="rooms-filter" data-filter="scoped" onclick="setFilter(this,'scoped')">Scoped</button>
+  <button class="rooms-filter" data-filter="in_build" onclick="setFilter(this,'in_build')">In Build</button>
+  <button class="rooms-filter" data-filter="delivered" onclick="setFilter(this,'delivered')">Delivered</button>
+</div>
+
+{% if rooms %}
+<div class="rooms-grid" id="roomsGrid">
+  {% for room in rooms %}
+  {% set pct = ((room.answered_questions / room.total_questions) * 100)|int if room.total_questions else 0 %}
+  {% set status_map = {'draft':'Draft','in_clarification':'In Clarification','scoped':'Scoped','in_build':'In Build','delivered':'Delivered'} %}
+  {% set status_label = status_map.get(room.status, room.status.replace('_',' ').title()) %}
+  <a href="/studio/rooms/{{ room.id }}" class="room-card" data-status="{{ room.status }}"
+     data-name="{{ room.title|lower }} {{ room.client_name|lower }}">
+    <div class="room-card-header">
+      <div>
+        <div class="room-card-title">{{ room.title }}</div>
+        {% if room.client_name %}
+        <div class="room-card-client">{{ room.client_name }}</div>
+        {% endif %}
+      </div>
+      <span class="room-status rs-{{ room.status }}">{{ status_label }}</span>
+    </div>
+    <div class="room-card-body">
+      <div class="room-card-meta">
+        {% if room.project_type %}<span class="rcm-item"><strong>Type:</strong> {{ room.project_type }}</span>{% endif %}
+        {% if room.quote_ref %}<span class="rcm-item"><strong>Quote:</strong> {{ room.quote_ref }}</span>{% endif %}
+        <span class="rcm-item"><strong>Sections:</strong> {{ room.section_count|default(15) }}</span>
+      </div>
+      <div class="room-prog">
+        <div class="room-prog-bar"><div class="room-prog-fill" style="width:{{ pct }}%"></div></div>
+        <div class="room-prog-label">
+          <span>{{ room.answered_questions }}/{{ room.total_questions }} answered</span>
+          <span>{{ pct }}%</span>
+        </div>
+      </div>
+    </div>
+    <div class="room-card-foot">
+      <span class="room-open-btn">Open Room →</span>
+      <span class="room-updated">Updated {{ room.updated_at[:10] if room.updated_at else '' }}</span>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="empty-state">
+  <div style="font-size:40px;margin-bottom:16px">🚪</div>
+  <h3>No meeting rooms yet</h3>
+  <p>Create a room to start scoping a project with your client.<br>
+     Each room is a shared collaboration space with structured questions, AI analysis, and export.</p>
+  <a href="/studio/rooms/new" class="btn-primary">+ Create First Room</a>
+</div>
+{% endif %}
+
+<script>
+let activeFilter = 'all';
+function setFilter(btn, filter) {
+  activeFilter = filter;
+  document.querySelectorAll('.rooms-filter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filterRooms();
+}
+function filterRooms() {
+  const q = (document.getElementById('roomSearch').value || '').toLowerCase();
+  document.querySelectorAll('.room-card').forEach(card => {
+    const matchFilter = activeFilter === 'all' || card.dataset.status === activeFilter;
+    const matchSearch = !q || (card.dataset.name || '').includes(q);
+    card.style.display = (matchFilter && matchSearch) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

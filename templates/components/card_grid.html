@@ -1,0 +1,37 @@
+{% set grouped = {
+    'Draft': [],
+    'Sent to Contractor': [],
+    'Priced': [],
+    'Sent to Client': [],
+    'Approved': []
+} %}
+
+{% set status_class_map = {
+    'Draft': 'draft',
+    'Sent to Contractor': 'sent',
+    'Priced': 'priced',
+    'Sent to Client': 'client',
+    'Approved': 'approved'
+} %}
+
+{% for report in reports %}
+    {% set status = report.workflow_status or report.status or 'Draft' %}
+    {% if status in grouped %}
+        {% set _ = grouped[status].append(report) %}
+    {% else %}
+        {% set _ = grouped['Draft'].append(report) %}
+    {% endif %}
+{% endfor %}
+
+{% for status, status_reports in grouped.items() %}
+    {% if status_reports|length > 0 %}
+    <div class="status-section">
+        <h2 class="status-{{ status_class_map[status] }}">{{ status }} ({{ status_reports|length }})</h2>
+        <div class="grid">
+            {% for report in status_reports %}
+                {% include 'components/report_card.html' %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+{% endfor %}

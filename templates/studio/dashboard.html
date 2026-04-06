@@ -1,0 +1,195 @@
+{% extends 'layouts/app.html' %}
+
+{% block title %}Studio Dashboard — Devex AI Studios{% endblock %}
+
+{% block extra_styles %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block sidebar %}
+    {% set active_nav = 'dashboard' %}
+    {% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-title">
+    <h1>Studio Dashboard</h1>
+    <p>Devex AI Studios — Operations Overview</p>
+</div>
+<div class="topbar-actions">
+    {% if session.get('dx_role') %}
+    <div class="dx-auth-badge">
+        <span class="dx-role-pill">{{ session.get('dx_role', 'admin') }}</span>
+        <span>{{ session.get('dx_user', '') }}</span>
+        <a href="{{ url_for('dx_logout') }}">Sign out</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- KPI Strip -->
+<div class="dx-kpi-row">
+    <a href="/studio/quotes" class="dx-kpi accent">
+        <div class="dx-kpi-value">{{ quote_stats.total or 0 }}</div>
+        <div class="dx-kpi-label">Total Quotes</div>
+    </a>
+    <a href="/studio/quotes?status=NEW" class="dx-kpi">
+        <div class="dx-kpi-value">{{ quote_stats.new or 0 }}</div>
+        <div class="dx-kpi-label">New</div>
+    </a>
+    <a href="/studio/quotes?status=REVIEWING" class="dx-kpi warning">
+        <div class="dx-kpi-value">{{ quote_stats.reviewing or 0 }}</div>
+        <div class="dx-kpi-label">In Review</div>
+    </a>
+    <a href="/studio/quotes?status=WON" class="dx-kpi success">
+        <div class="dx-kpi-value">{{ quote_stats.won or 0 }}</div>
+        <div class="dx-kpi-label">Won</div>
+    </a>
+    <a href="/studio/pipeline" class="dx-kpi">
+        <div class="dx-kpi-value">{{ ticket_stats.open or 0 }}</div>
+        <div class="dx-kpi-label">Open Tickets</div>
+    </a>
+    <a href="/studio/pipeline" class="dx-kpi danger">
+        <div class="dx-kpi-value">{{ ticket_stats.urgent or 0 }}</div>
+        <div class="dx-kpi-label">Urgent</div>
+    </a>
+</div>
+
+<!-- Two-column panels -->
+<div class="dx-studio-grid">
+
+    <!-- Recent Quotes -->
+    <div class="dx-panel">
+        <div class="dx-panel-head">
+            <div class="dx-panel-head-title">Recent Quotes</div>
+            <a href="/studio/quotes" class="dx-btn dx-btn-secondary dx-btn-sm">View All</a>
+        </div>
+        <div class="dx-panel-body">
+            {% if recent_quotes %}
+                {% for q in recent_quotes %}
+                <a href="/studio/quotes/{{ q.ref }}" class="dx-list-row">
+                    <div>
+                        <div class="dx-list-ref">{{ q.ref }}</div>
+                        <div style="font-size:13px;color:#374151;margin-top:2px;">
+                            {{ q.contact_name or 'Unknown' }}
+                            {% if q.project_name %}&mdash; {{ q.project_name[:40] }}{% endif %}
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="dx-badge dx-badge-{{ q.status|lower }}">{{ q.status }}</span>
+                        <div class="dx-list-meta" style="margin-top:4px;">
+                            {{ q.complexity_score or '' }}
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            {% else %}
+                <div class="dx-empty" style="padding:30px;">
+                    <div class="dx-empty-title">No quotes yet</div>
+                    <div class="dx-empty-sub">New project quotes will appear here.</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Tickets / Pipeline -->
+    <div class="dx-panel">
+        <div class="dx-panel-head">
+            <div class="dx-panel-head-title">Pipeline Tickets</div>
+            <a href="/studio/pipeline" class="dx-btn dx-btn-secondary dx-btn-sm">View All</a>
+        </div>
+        <div class="dx-panel-body">
+            {% if recent_tickets %}
+                {% for t in recent_tickets %}
+                <a href="/fm/ticket/{{ t.ref }}" class="dx-list-row">
+                    <div>
+                        <div class="dx-list-ref">{{ t.ref }}</div>
+                        <div style="font-size:13px;color:#374151;margin-top:2px;">
+                            {{ t.customer or 'Unknown' }}
+                            {% if t.summary %}&mdash; {{ t.summary[:40] }}{% endif %}
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="dx-badge dx-badge-{{ t.priority|lower if t.priority else 'normal' }}">
+                            {{ t.priority or 'normal' }}
+                        </span>
+                        <div class="dx-list-meta" style="margin-top:4px;">{{ t.status }}</div>
+                    </div>
+                </a>
+                {% endfor %}
+            {% else %}
+                <div class="dx-empty" style="padding:30px;">
+                    <div class="dx-empty-title">No tickets</div>
+                    <div class="dx-empty-sub">Inbound client messages will appear here.</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Deliverables (Artefacts) -->
+    <div class="dx-panel">
+        <div class="dx-panel-head">
+            <div class="dx-panel-head-title">Recent Deliverables</div>
+            <a href="/artefacts" class="dx-btn dx-btn-secondary dx-btn-sm">View All</a>
+        </div>
+        <div class="dx-panel-body">
+            {% if recent_artefacts %}
+                {% for a in recent_artefacts %}
+                <a href="/artefacts/{{ a.id }}" class="dx-list-row">
+                    <div>
+                        <div style="font-size:13px;font-weight:600;color:#374151;">
+                            {{ a.title or 'Untitled' }}
+                        </div>
+                        <div class="dx-list-meta">{{ a.artefact_type|capitalize }}</div>
+                    </div>
+                    <span class="dx-badge dx-badge-{{ a.status|lower|replace(' ','_') if a.status else 'draft' }}">
+                        {{ a.status or 'Draft' }}
+                    </span>
+                </a>
+                {% endfor %}
+            {% else %}
+                <div class="dx-empty" style="padding:30px;">
+                    <div class="dx-empty-title">No deliverables</div>
+                    <div class="dx-empty-sub">Scope documents and reports appear here.</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Comms Monitor Summary -->
+    <div class="dx-panel">
+        <div class="dx-panel-head">
+            <div class="dx-panel-head-title">Comms Pipeline</div>
+            <a href="/studio/comms" class="dx-btn dx-btn-secondary dx-btn-sm">Monitor</a>
+        </div>
+        <div class="dx-panel-body">
+            {% if comms_sessions %}
+                {% for s in comms_sessions %}
+                <div class="dx-list-row" style="cursor:default;">
+                    <div>
+                        <div style="font-size:13px;font-weight:600;color:#374151;">
+                            {{ s.display_name or s.wa_from or 'Unknown' }}
+                        </div>
+                        <div class="dx-list-meta">
+                            {{ s.message_count }} message{{ 's' if s.message_count != 1 else '' }}
+                            &middot; {{ s.last_message_at or '' }}
+                        </div>
+                    </div>
+                    <span class="dx-badge dx-badge-{{ s.status|lower if s.status else 'active' }}">
+                        {{ s.status or 'active' }}
+                    </span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="dx-empty" style="padding:30px;">
+                    <div class="dx-empty-title">No active sessions</div>
+                    <div class="dx-empty-sub">WhatsApp client messages appear here.</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Project — Devex AI Studios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dx.css') }}">
+<style>
+body { font-family: 'DM Sans', sans-serif; background: #F8FAFC; min-height: 100vh; }
+
+.cp-nav {
+    background: #0D1117;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+}
+
+.cp-nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.cp-nav-brand .mark {
+    width: 28px;
+    height: 28px;
+    background: #2563EB;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.cp-nav-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 13px;
+    color: #8B949E;
+}
+
+.cp-nav-right a {
+    color: #8B949E;
+    text-decoration: none;
+    transition: color .15s;
+}
+
+.cp-nav-right a:hover { color: #fff; }
+
+.cp-shell {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+}
+
+.cp-hero {
+    background: linear-gradient(135deg, #0D1117 0%, #1E293B 100%);
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 28px;
+    color: #fff;
+}
+
+.cp-hero-eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: #8B949E;
+    margin-bottom: 8px;
+}
+
+.cp-hero-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #F1F5F9;
+    margin-bottom: 4px;
+}
+
+.cp-hero-sub {
+    font-size: 14px;
+    color: #8B949E;
+    margin-bottom: 20px;
+}
+
+.cp-hero-meta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.cp-hero-chip {
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: #94A3B8;
+}
+
+.cp-hero-chip strong { color: #E2E8F0; }
+
+.cp-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 20px;
+    align-items: start;
+}
+
+.cp-card {
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+.cp-card-head {
+    padding: 14px 20px;
+    border-bottom: 1px solid #F1F5F9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cp-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #64748B;
+}
+
+.cp-card-body {
+    padding: 20px;
+}
+
+.cp-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.cp-row-key {
+    color: #64748B;
+    min-width: 140px;
+    flex-shrink: 0;
+}
+
+.cp-row-val {
+    color: #1E293B;
+    font-weight: 500;
+    flex: 1;
+}
+
+.cp-status-track {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.cp-status-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 20px;
+    border-bottom: 1px solid #F9FAFB;
+}
+
+.cp-status-step:last-child { border-bottom: none; }
+
+.cp-step-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.cp-step-dot.done   { background: #ECFDF5; color: #059669; border: 2px solid #A7F3D0; }
+.cp-step-dot.active { background: #EFF6FF; color: #2563EB; border: 2px solid #BFDBFE; }
+.cp-step-dot.upcoming { background: #F8FAFC; color: #CBD5E1; border: 2px solid #E2E8F0; }
+
+.cp-step-title { font-size: 14px; font-weight: 600; color: #1E293B; }
+.cp-step-sub   { font-size: 12px; color: #64748B; margin-top: 2px; }
+
+.cp-scope-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.cp-scope-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid #F1F5F9;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cp-scope-list li:last-child { border-bottom: none; }
+
+.cp-scope-list li::before {
+    content: '✓';
+    color: #059669;
+    font-weight: 700;
+    font-size: 11px;
+}
+
+.cp-flag {
+    background: #FFFBEB;
+    border: 1px solid #FDE68A;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #92400E;
+    margin-bottom: 8px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+.cp-flag::before { content: '⚠'; flex-shrink: 0; }
+
+.cp-complexity {
+    text-align: center;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.cp-complexity.Low       { background: #F0FDF4; border: 2px solid #A7F3D0; }
+.cp-complexity.Medium    { background: #FFFBEB; border: 2px solid #FDE68A; }
+.cp-complexity.High      { background: #FEF2F2; border: 2px solid #FECACA; }
+.cp-complexity.Enterprise { background: #FAF5FF; border: 2px solid #DDD6FE; }
+
+.cp-complexity-value {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.cp-complexity.Low       .cp-complexity-value { color: #059669; }
+.cp-complexity.Medium    .cp-complexity-value { color: #D97706; }
+.cp-complexity.High      .cp-complexity-value { color: #DC2626; }
+.cp-complexity.Enterprise .cp-complexity-value { color: #7C3AED; }
+
+.cp-complexity-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #64748B;
+}
+
+.cp-weeks {
+    font-size: 13px;
+    color: #64748B;
+    margin-top: 6px;
+}
+
+@media (max-width: 768px) {
+    .cp-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav class="cp-nav">
+    <a href="{{ url_for('dx_public_landing') }}" class="cp-nav-brand">
+        <div class="mark">DX</div>
+        Devex AI Studios
+    </a>
+    <div class="cp-nav-right">
+        <span>{{ session.get('dx_user', '') }}</span>
+        <a href="{{ url_for('dx_logout') }}">Sign out</a>
+    </div>
+</nav>
+
+<div class="cp-shell">
+
+    <!-- Hero -->
+    <div class="cp-hero">
+        <div class="cp-hero-eyebrow">Client Portal</div>
+        <div class="cp-hero-title">{{ quote.project_name or 'Your Project' }}</div>
+        <div class="cp-hero-sub">{{ quote.company_name or quote.contact_name or '' }}</div>
+        <div class="cp-hero-meta">
+            <div class="cp-hero-chip"><strong>Ref:</strong> {{ quote.ref }}</div>
+            <div class="cp-hero-chip"><strong>Type:</strong> {{ (quote.project_type or '').replace('_', ' ').title() }}</div>
+            <div class="cp-hero-chip">
+                <strong>Status:</strong>
+                <span class="dx-badge dx-badge-{{ quote.status|lower if quote.status else 'new' }}" style="margin-left:4px;">
+                    {{ quote.status or 'NEW' }}
+                </span>
+            </div>
+            {% if quote.complexity_score %}
+            <div class="cp-hero-chip"><strong>Complexity:</strong> {{ quote.complexity_score }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="cp-grid">
+        <!-- Left: main content -->
+        <div>
+            <!-- Project Summary -->
+            <div class="cp-card">
+                <div class="cp-card-head">
+                    <div class="cp-card-title">Project Summary</div>
+                </div>
+                <div class="cp-card-body">
+                    {% if quote.ai_summary %}
+                        <p style="font-size:14px;color:#374151;line-height:1.7;">{{ quote.ai_summary }}</p>
+                    {% else %}
+                        <p style="font-size:14px;color:#94A3B8;">
+                            Your project is being reviewed. We will update this section with a full scope summary shortly.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Project Details -->
+            <div class="cp-card">
+                <div class="cp-card-head">
+                    <div class="cp-card-title">Project Details</div>
+                </div>
+                <div class="cp-card-body">
+                    <div class="cp-row">
+                        <span class="cp-row-key">Project Type</span>
+                        <span class="cp-row-val">{{ (quote.project_type or '').replace('_', ' ').title() or '—' }}</span>
+                    </div>
+                    <div class="cp-row">
+                        <span class="cp-row-key">Description</span>
+                        <span class="cp-row-val">{{ quote.brief_description or '—' }}</span>
+                    </div>
+                    {% if quote.budget_range %}
+                    <div class="cp-row">
+                        <span class="cp-row-key">Budget Range</span>
+                        <span class="cp-row-val">{{ quote.budget_range.replace('_', ' ').replace('under', 'Under ').replace('plus', '+') }}</span>
+                    </div>
+                    {% endif %}
+                    {% if quote.start_date %}
+                    <div class="cp-row">
+                        <span class="cp-row-key">Ideal Start</span>
+                        <span class="cp-row-val">{{ quote.start_date }}</span>
+                    </div>
+                    {% endif %}
+                    {% if quote.launch_date %}
+                    <div class="cp-row">
+                        <span class="cp-row-key">Target Launch</span>
+                        <span class="cp-row-val">{{ quote.launch_date }}</span>
+                    </div>
+                    {% endif %}
+                    {% if quote.stack_recommendation %}
+                    <div class="cp-row">
+                        <span class="cp-row-key">Recommended Stack</span>
+                        <span class="cp-row-val">{{ quote.stack_recommendation }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Must-Have Features -->
+            {% if scope and scope.must_have_features %}
+            <div class="cp-card">
+                <div class="cp-card-head">
+                    <div class="cp-card-title">Confirmed Features</div>
+                </div>
+                <div class="cp-card-body" style="padding:12px 20px;">
+                    <ul class="cp-scope-list">
+                        {% for f in scope.must_have_features %}
+                        <li>{{ f }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Phase Breakdown -->
+            {% if scope and scope.phase_breakdown %}
+            <div class="cp-card">
+                <div class="cp-card-head">
+                    <div class="cp-card-title">Delivery Plan</div>
+                </div>
+                <div class="cp-card-body" style="padding:0;">
+                    {% for phase in scope.phase_breakdown %}
+                    <div style="padding:14px 20px;border-bottom:1px solid #F9FAFB;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                            <div style="font-size:14px;font-weight:600;color:#1E293B;">{{ phase.phase }}</div>
+                            <div style="font-size:12px;color:#64748B;font-weight:600;">~{{ phase.weeks }}w</div>
+                        </div>
+                        {% if phase.notes and phase.notes != 'TBC' %}
+                        <div style="font-size:12px;color:#64748B;">{{ phase.notes }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Flags / Things to Clarify -->
+            {% if scope and scope.flags %}
+            <div class="cp-card">
+                <div class="cp-card-head">
+                    <div class="cp-card-title">Points to Discuss</div>
+                </div>
+                <div class="cp-card-body">
+                    {% for flag in scope.flags %}
+                    <div class="cp-flag">{{ flag }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right: sidebar -->
+        <div>
+            <!-- Complexity -->
+            {% if quote.complexity_score %}
+            <div class="cp-complexity {{ quote.complexity_score }}">
+                <div class="cp-complexity-value">{{ quote.complexity_score }}</div>
+                <div class="cp-complexity-label">Complexity Rating</div>
+                {% if quote.estimated_weeks %}
+                <div class="cp-weeks">Estimated {{ quote.estimated_weeks }} weeks</div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Status Track -->
+            <div class="cp-card">
+                <div class="cp-card-head">
+                    <div class="cp-card-title">Where We Are</div>
+                </div>
+                <div class="cp-status-track">
+                    {% set statuses = [
+                        ('NEW',      'Requirements Received',   'Your brief has been received.'),
+                        ('REVIEWING','Under Review',             'Our team is analysing your requirements.'),
+                        ('SCOPED',   'Scope Prepared',           'A detailed scope document is ready.'),
+                        ('SENT',     'Proposal Sent',            'A proposal has been sent to you.'),
+                        ('WON',      'Project Confirmed',        'Project is confirmed. Let\'s build!'),
+                    ] %}
+                    {% set current_idx = namespace(val=0) %}
+                    {% for s, _, _ in statuses %}
+                        {% if quote.status == s %}{% set current_idx.val = loop.index0 %}{% endif %}
+                    {% endfor %}
+                    {% for s, title, sub in statuses %}
+                    <div class="cp-status-step">
+                        <div class="cp-step-dot {% if loop.index0 < current_idx.val %}done{% elif loop.index0 == current_idx.val %}active{% else %}upcoming{% endif %}">
+                            {% if loop.index0 < current_idx.val %}✓
+                            {% elif loop.index0 == current_idx.val %}●
+                            {% else %}{{ loop.index }}{% endif %}
+                        </div>
+                        <div>
+                            <div class="cp-step-title">{{ title }}</div>
+                            <div class="cp-step-sub">{{ sub }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Contact Info -->
+            <div class="cp-card">
+                <div class="cp-card-head">
+                    <div class="cp-card-title">Your Details</div>
+                </div>
+                <div class="cp-card-body">
+                    <div class="cp-row">
+                        <span class="cp-row-key">Name</span>
+                        <span class="cp-row-val">{{ quote.contact_name or '—' }}</span>
+                    </div>
+                    <div class="cp-row">
+                        <span class="cp-row-key">Email</span>
+                        <span class="cp-row-val">{{ quote.contact_email or '—' }}</span>
+                    </div>
+                    {% if quote.contact_phone %}
+                    <div class="cp-row">
+                        <span class="cp-row-key">Phone</span>
+                        <span class="cp-row-val">{{ quote.contact_phone }}</span>
+                    </div>
+                    {% endif %}
+                    {% if quote.company_name %}
+                    <div class="cp-row">
+                        <span class="cp-row-key">Company</span>
+                        <span class="cp-row-val">{{ quote.company_name }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Next Steps -->
+            <div class="cp-card">
+                <div class="cp-card-head">
+                    <div class="cp-card-title">Next Steps</div>
+                </div>
+                <div class="cp-card-body">
+                    <p style="font-size:13px;color:#374151;line-height:1.6;">
+                        {% if quote.status == 'NEW' %}
+                            We will review your requirements and be in touch within one business day.
+                        {% elif quote.status == 'REVIEWING' %}
+                            Our team is building your scope estimate. You will hear from us soon.
+                        {% elif quote.status == 'SCOPED' %}
+                            Your scope is ready. We will contact you to walk through it.
+                        {% elif quote.status == 'SENT' %}
+                            Please review the proposal and get back to us with any questions.
+                        {% elif quote.status == 'WON' %}
+                            Fantastic! We will be in touch to start the onboarding process.
+                        {% else %}
+                            Our team will contact you shortly.
+                        {% endif %}
+                    </p>
+                    <div style="margin-top:16px;">
+                        <a href="{{ url_for('dx_public_contact') }}"
+                           style="color:#2563EB;font-size:13px;font-weight:600;text-decoration:none;">
+                            Contact us with questions &rarr;
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

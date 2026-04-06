@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<title>Report an Issue — DevEx FM</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:   #1a2b47;
+    --accent: #e07b2a;
+    --green:  #25d366;
+    --bg:     #f4f6f9;
+    --card:   #ffffff;
+    --border: #dde3ec;
+    --text:   #1a2b47;
+    --muted:  #64748b;
+    --error:  #dc2626;
+    --radius: 10px;
+  }
+
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── Header ── */
+  .lp-header {
+    background: var(--navy);
+    color: #fff;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    height: 60px;
+    gap: 12px;
+  }
+  .lp-header .logo { font-weight: 700; font-size: 17px; letter-spacing: -.3px; }
+  .lp-header .logo span { color: var(--accent); }
+
+  /* ── Hero ── */
+  .lp-hero {
+    background: linear-gradient(135deg, var(--navy) 0%, #243b62 100%);
+    color: #fff;
+    text-align: center;
+    padding: 56px 24px 48px;
+  }
+  .lp-hero h1 { font-size: clamp(26px, 5vw, 40px); font-weight: 700; margin-bottom: 14px; }
+  .lp-hero p  { font-size: 17px; color: #b8c8df; max-width: 520px; margin: 0 auto 32px; line-height: 1.6; }
+
+  .cta-row {
+    display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 14px 28px; border-radius: var(--radius);
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    text-decoration: none; border: none; transition: opacity .15s, transform .1s;
+  }
+  .btn:hover { opacity: .9; transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-wa      { background: var(--green);  color: #fff; }
+  .btn-outline { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,.4); }
+
+  /* ── Main layout ── */
+  .lp-main {
+    max-width: 760px; margin: 0 auto; padding: 40px 20px 60px;
+  }
+
+  /* ── Error banner ── */
+  .error-banner {
+    background: #fef2f2; border: 1px solid #fca5a5;
+    color: var(--error); border-radius: var(--radius);
+    padding: 14px 18px; margin-bottom: 24px; font-size: 14px;
+  }
+
+  /* ── Form card ── */
+  .form-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 32px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  }
+  .form-card h2 {
+    font-size: 20px; font-weight: 700; margin-bottom: 6px;
+  }
+  .form-card .subtitle {
+    color: var(--muted); font-size: 14px; margin-bottom: 28px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-bottom: 18px;
+  }
+  @media (max-width: 540px) { .form-row { grid-template-columns: 1fr; } }
+
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+  .field:last-child { margin-bottom: 0; }
+
+  label {
+    font-size: 13px; font-weight: 600; color: var(--navy);
+    display: flex; align-items: center; gap: 4px;
+  }
+  .req { color: var(--error); }
+
+  input, select, textarea {
+    width: 100%; padding: 10px 14px;
+    border: 1px solid var(--border); border-radius: 8px;
+    font-size: 15px; font-family: inherit; color: var(--text);
+    background: #fff; transition: border-color .15s, box-shadow .15s;
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(224,123,42,.12);
+  }
+  textarea { resize: vertical; min-height: 120px; line-height: 1.5; }
+
+  /* Urgency radio group */
+  .urgency-group {
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .urgency-option { display: none; }
+  .urgency-label {
+    padding: 8px 18px; border-radius: 20px;
+    border: 1.5px solid var(--border); font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: all .15s; color: var(--muted);
+    user-select: none;
+  }
+  .urgency-option:checked + .urgency-label {
+    border-color: var(--accent); background: var(--accent);
+    color: #fff; font-weight: 600;
+  }
+  #urg-urgent:checked + label { background: #dc2626; border-color: #dc2626; color: #fff; }
+  #urg-normal:checked + label { background: var(--accent); border-color: var(--accent); color: #fff; }
+  #urg-low:checked    + label { background: #059669; border-color: #059669; color: #fff; }
+
+  .form-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 14px; margin-top: 28px; padding-top: 22px;
+    border-top: 1px solid var(--border);
+  }
+  .form-footer .note { font-size: 13px; color: var(--muted); }
+
+  .btn-submit {
+    background: var(--accent); color: #fff;
+    padding: 13px 32px; border-radius: var(--radius);
+    font-size: 15px; font-weight: 600; border: none; cursor: pointer;
+    transition: opacity .15s;
+  }
+  .btn-submit:hover { opacity: .88; }
+
+  /* ── Divider ── */
+  .or-divider {
+    display: flex; align-items: center; gap: 12px;
+    color: var(--muted); font-size: 13px; margin: 32px 0;
+  }
+  .or-divider::before, .or-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* ── WA card ── */
+  .wa-card {
+    background: #f0fdf4; border: 1px solid #bbf7d0;
+    border-radius: var(--radius); padding: 24px 28px;
+    display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  }
+  .wa-icon {
+    width: 52px; height: 52px; background: var(--green);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .wa-icon svg { width: 28px; height: 28px; fill: #fff; }
+  .wa-card-body h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .wa-card-body p  { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+/* Floating button */
+#chat-toggle{
+position:fixed;
+bottom:20px;
+right:20px;
+background:white;
+border:3px solid #00bcd4;
+padding:10px 20px;
+border-radius:25px;
+cursor:pointer;
+font-weight:600;
+box-shadow:0 4px 12px rgba(0,0,0,0.2);
+z-index:9999;
+}
+
+/* Chat window */
+#chat-box{
+position:fixed;
+bottom:80px;
+right:20px;
+width:320px;
+height:420px;
+background:white;
+border-radius:10px;
+box-shadow:0 8px 25px rgba(0,0,0,0.25);
+display:none;
+flex-direction:column;
+z-index:9999;
+}
+
+/* Chat header */
+#chat-header{
+background:#1a2b47;
+color:white;
+padding:10px;
+font-weight:600;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+/* Messages area */
+#chat-messages{
+flex:1;
+padding:10px;
+overflow-y:auto;
+background:#f9fafb;
+}
+
+/* User message */
+.user-msg{
+background:#2563eb;
+color:white;
+padding:8px 10px;
+border-radius:6px;
+margin:6px 0;
+text-align:right;
+}
+
+/* Bot message */
+.bot-msg{
+background:#e5e7eb;
+padding:8px 10px;
+border-radius:6px;
+margin:6px 0;
+}
+
+/* Input area */
+#chat-input-area{
+display:flex;
+gap:5px;
+padding:8px;
+border-top:1px solid #ddd;
+}
+
+#chat-input{
+flex:1;
+padding:6px;
+border:1px solid #ccc;
+border-radius:6px;
+}
+
+#send-btn{
+background:#1a2b47;
+color:white;
+border:none;
+padding:6px 12px;
+border-radius:6px;
+cursor:pointer;
+}
+
+  /* ── Footer ── */
+  .lp-footer {
+    text-align: center; padding: 32px 16px;
+    color: var(--muted); font-size: 13px;
+    border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<header class="lp-header">
+  <div class="logo">DevEx <span>FM</span></div>
+</header>
+
+<section class="lp-hero">
+  <h1>Report a Property Issue</h1>
+  <p>Use the form below to log a maintenance or facilities issue directly with your property management team. We aim to respond within 24 hours.</p>
+  <div class="cta-row">
+    <a href="#report-form" class="btn btn-primary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Report an Issue
+    </a>
+    {% if wa_link %}
+    <a href="{{ wa_link }}" target="_blank" class="btn btn-wa">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+      Send on WhatsApp
+    </a>
+    {% endif %}
+  </div>
+</section>
+
+<main class="lp-main">
+
+  {% if error %}
+  <div class="error-banner">{{ error }}</div>
+  {% endif %}
+
+  <div class="form-card" id="report-form">
+    <h2>Log a Maintenance Issue</h2>
+    <p class="subtitle">All fields marked <span style="color:var(--error)">*</span> are required. Your reference number will be shown on submission.</p>
+
+    <form method="POST" action="/report">
+
+      <div class="form-row">
+        <div class="field">
+          <label for="name">Full Name <span class="req">*</span></label>
+          <input type="text" id="name" name="name" placeholder="e.g. Jane Okonkwo"
+                 value="{{ form.name if form else '' }}" required>
+        </div>
+        <div class="field">
+          <label for="phone">Phone Number</label>
+          <input type="tel" id="phone" name="phone" placeholder="e.g. +447700900001"
+                 value="{{ form.phone if form else '' }}">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="location">Site / Estate / Flat <span class="req">*</span></label>
+        <input type="text" id="location" name="location"
+               placeholder="e.g. Oak Estate, Block B, Flat 14"
+               value="{{ form.location if form else '' }}" required>
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label for="category">Issue Category <span class="req">*</span></label>
+          <select id="category" name="category" required>
+            {% for val, label in categories %}
+            <option value="{{ val }}"
+              {% if form and form.category == val %}selected{% endif %}>
+              {{ label }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>Urgency <span class="req">*</span></label>
+          <div class="urgency-group">
+            <input class="urgency-option" type="radio" name="urgency" id="urg-urgent" value="urgent"
+                   {% if form and form.urgency == 'urgent' %}checked{% endif %}>
+            <label class="urgency-label" for="urg-urgent">Urgent</label>
+
+            <input class="urgency-option" type="radio" name="urgency" id="urg-normal" value="normal"
+                   {% if not form or form.urgency in ('', 'normal') %}checked{% endif %}>
+            <label class="urgency-label" for="urg-normal">Normal</label>
+
+            <input class="urgency-option" type="radio" name="urgency" id="urg-low" value="low"
+                   {% if form and form.urgency == 'low' %}checked{% endif %}>
+            <label class="urgency-label" for="urg-low">Low</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="description">Describe the Issue <span class="req">*</span></label>
+        <textarea id="description" name="description"
+                  placeholder="Please describe the issue in as much detail as possible — what you see, when it started, how severe it is."
+                  required>{{ form.description if form else '' }}</textarea>
+      </div>
+
+      <!-- Cloudflare Turnstile bot protection -->
+      <div class="cf-turnstile" data-sitekey="{{ turnstile_sitekey }}" data-theme="light" style="margin-bottom:16px"></div>
+
+      <div class="form-footer">
+        <span class="note">Your details are used only to process your request.</span>
+        <button type="submit" class="btn-submit">Submit Report &rarr;</button>
+      </div>
+
+    </form>
+  </div>
+
+  {% if wa_link %}
+  <div class="or-divider">or send via WhatsApp</div>
+
+  <div class="wa-card">
+    <div class="wa-icon">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+    </div>
+    <div class="wa-card-body">
+      <h3>Prefer WhatsApp?</h3>
+      <p>Tap the button to open a pre-filled WhatsApp message to our team. You can also send photos of the issue directly in the chat.</p>
+    </div>
+    <a href="{{ wa_link }}" target="_blank" class="btn btn-wa" style="margin-left:auto">
+      Open WhatsApp &rarr;
+    </a>
+  </div>
+  {% endif %}
+
+</main>
+
+<footer class="lp-footer">
+  <p>DevEx Studios FM Platform &mdash; Powered by DevEx Studios</p>
+</footer>
+
+
+<!-- ================= AI CHATBOT ================= -->
+
+<!-- Floating Chat Button -->
+<div id="chat-toggle">💬 Contact Us</div>
+
+<!-- Chat Window -->
+<div id="chat-box">
+
+    <div id="chat-header">
+        DevEx AI Assistant
+        <span id="close-chat">✖</span>
+    </div>
+
+    <div id="chat-messages">
+        <div class="bot-msg">
+            👋 Welcome to DevEx! Ask me anything or upload an image.
+        </div>
+    </div>
+
+    <div id="chat-input-area">
+        <input type="text" id="chat-input" placeholder="Type message...">
+
+        <!-- Image Upload -->
+        <input type="file" id="image-upload" accept="image/*">
+
+        <button id="send-btn">Send</button>
+    </div>
+
+</div>
+
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function(){
+
+const chatToggle = document.getElementById("chat-toggle");
+const chatBox = document.getElementById("chat-box");
+const sendBtn = document.getElementById("send-btn");
+
+chatToggle.onclick = () => chatBox.style.display="flex";
+
+sendBtn.onclick = async () => {
+
+let text = document.getElementById("chat-input").value;
+let image = document.getElementById("image-upload").files[0];
+let chat = document.getElementById("chat-messages");
+
+if(text){
+
+chat.innerHTML += `<div class="user-msg">${text}</div>`;
+
+let res = await fetch("/ai/chat",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({message:text})
+});
+
+let data = await res.json();
+
+chat.innerHTML += `<div class="bot-msg">${data.reply}</div>`;
+}
+
+if(image){
+
+let form = new FormData();
+form.append("image", image);
+
+let res = await fetch("/ai/image",{
+method:"POST",
+body:form
+});
+
+let data = await res.json();
+
+chat.innerHTML += `<div class="bot-msg">${data.analysis}</div>`;
+}
+
+}
+
+});
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,526 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}{{ artefact.title }} - Version {{ version_no }}{% endblock %}
+
+{% block sidebar %}
+    {% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block topbar %}
+{% if not is_pdf_export %}
+<div class="topbar-title">
+    <h1>{{ artefact.title }}</h1>
+    <p>{% if artefact.artefact_type == 'engagement' %}Inspection Report{% elif artefact.artefact_type == 'incident' %}Incident Report{% elif artefact.artefact_type == 'investigation' %}Investigation{% elif artefact.artefact_type == 'assessment' %}Assessment{% else %}{{ artefact.artefact_type|title }}{% endif %} · Version {{ version_no }} · {{ artefact.status }}</p>
+    {% if audience %}
+    <p class="audience-badge">Audience: {{ audience|capitalize }}</p>
+    {% endif %}
+</div>
+<div class="topbar-actions">
+    {% if audience and audience != 'technical' %}
+    <a href="/artefacts/{{ artefact.id }}/v/{{ version_no }}" class="btn btn-secondary">Full Detail View</a>
+    {% endif %}
+    <a href="/artefacts/{{ artefact.id }}/versions" class="btn btn-secondary">Versions</a>
+    <a href="/artefacts/{{ artefact.id }}/edit" class="btn btn-secondary">Edit</a>
+    <a href="/artefacts/{{ artefact.id }}/v/{{ version_no }}/pdf?audience={{ audience or 'technical' }}" class="btn btn-primary">Export PDF</a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{# Batch 4: Multi-Audience Rendering #}
+{# Audience Rendering Rules:
+   - executive: Summary-focused, business impact, no detailed sections
+   - technical: Full detail (all sections)
+   - compliance: Evidence-focused, actions, findings
+#}
+
+<div class="report-view">
+    <div class="report-header">
+        <h1>{{ payload.meta.title }}</h1>
+        <div class="report-meta">
+            <div class="meta-item">
+                <strong>Type:</strong> {{ payload.meta.type|capitalize }}
+            </div>
+            <div class="meta-item">
+                <strong>Prepared By:</strong> {{ payload.meta.analyst or 'Not specified' }}
+            </div>
+            <div class="meta-item">
+                <strong>Date:</strong> {{ payload.meta.date }}
+            </div>
+            <div class="meta-item">
+                <strong>Status:</strong> 
+                <span class="status-badge status-{{ payload.meta.status|lower|replace(' ', '-') }}">
+                    {{ payload.meta.status }}
+                </span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Context Block (Show for all audiences) -->
+    {% if payload.meta.context %}
+    <div class="context-block">
+        <h3>Report Context</h3>
+        <div class="context-grid">
+            {% if payload.meta.context.journey %}
+            <div class="context-item">
+                <strong>Journey:</strong> {{ payload.meta.context.journey }}
+            </div>
+            {% endif %}
+            {% if payload.meta.context.incident_type %}
+            <div class="context-item">
+                <strong>Incident Type:</strong> {{ payload.meta.context.incident_type }}
+            </div>
+            {% endif %}
+            {% if payload.meta.context.audience %}
+            <div class="context-item">
+                <strong>Audience:</strong> {{ payload.meta.context.audience }}
+            </div>
+            {% endif %}
+            {% if payload.meta.context.analysis_framework and payload.meta.context.analysis_framework.key %}
+            <div class="context-item">
+                <strong>Framework:</strong> {{ payload.meta.context.analysis_framework.key }}
+                {% if payload.meta.context.analysis_framework.version %}
+                ({{ payload.meta.context.analysis_framework.version }})
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Targets & Assets (Technical + Compliance only) -->
+    {% if payload.targets and (audience == 'technical' or audience == 'compliance') %}
+    <div class="report-section">
+        <h2>Locations & Assets</h2>
+        {% for target in payload.targets %}
+        <div class="target-block">
+            <h3>{{ target.name }}</h3>
+            {% if target.context %}
+            <p class="context">{{ target.context }}</p>
+            {% endif %}
+            
+            {% if target.assets %}
+            <div class="assets-list">
+                <h4>Assets:</h4>
+                <ul>
+                {% for asset in target.assets %}
+                    <li><strong>{{ asset.name }}</strong> ({{ asset.type }})</li>
+                {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- Timeline & Actions Section (Audience-Specific Rendering) -->
+    {% if 'incident_case' in payload.modules_enabled and payload.incident_case %}
+    <div class="report-section">
+        <h2>Timeline & Actions</h2>
+        
+        <!-- Executive Summary (All Audiences) -->
+        {% if payload.incident_case.summary %}
+        <div class="pm-subsection">
+            <h3>Executive Summary</h3>
+            <p>{{ payload.incident_case.summary }}</p>
+        </div>
+        {% endif %}
+        
+        <!-- Impact Assessment (All Audiences) -->
+        {% if payload.incident_case.impact %}
+        <div class="pm-subsection">
+            <h3>Impact Assessment</h3>
+            <div class="impact-grid">
+                {% if payload.incident_case.impact.affected_systems %}
+                <div class="impact-item">
+                    <strong>Affected Systems:</strong>
+                    <p>{{ payload.incident_case.impact.affected_systems }}</p>
+                </div>
+                {% endif %}
+                {% if payload.incident_case.impact.user_impact %}
+                <div class="impact-item">
+                    <strong>User Impact:</strong>
+                    <p>{{ payload.incident_case.impact.user_impact }}</p>
+                </div>
+                {% endif %}
+                {% if payload.incident_case.impact.financial_impact %}
+                <div class="impact-item">
+                    <strong>Financial Impact:</strong>
+                    <p>{{ payload.incident_case.impact.financial_impact }}</p>
+                </div>
+                {% endif %}
+                {% if payload.incident_case.impact.reputational_impact %}
+                <div class="impact-item">
+                    <strong>Reputational Impact:</strong>
+                    <p>{{ payload.incident_case.impact.reputational_impact }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Timeline (Technical Only - Summary for Executive) -->
+        {% if payload.incident_case.timeline %}
+        <div class="pm-subsection">
+            <h3>Timeline of Events</h3>
+            {% if audience == 'technical' %}
+            {# Full timeline for technical #}
+            <table class="timeline-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Event</th>
+                        <th>Actor</th>
+                        <th>Evidence</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for entry in payload.incident_case.timeline %}
+                    <tr>
+                        <td>{{ entry.time }}</td>
+                        <td>{{ entry.event }}</td>
+                        <td>{{ entry.actor or '-' }}</td>
+                        <td>{{ entry.evidence or '-' }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% elif audience == 'executive' %}
+            {# Key events only for executive #}
+            <p><strong>Key Events:</strong></p>
+            <ul>
+            {% for entry in payload.incident_case.timeline[:5] %}
+                <li>{{ entry.time }}: {{ entry.event }}</li>
+            {% endfor %}
+            </ul>
+            <p><em>Showing first 5 of {{ payload.incident_case.timeline|length }} events</em></p>
+            {% elif audience == 'compliance' %}
+            {# Evidence-focused for compliance #}
+            <ul>
+            {% for entry in payload.incident_case.timeline %}
+                {% if entry.evidence %}
+                <li>{{ entry.time }}: {{ entry.event }} ({{ entry.evidence }})</li>
+                {% endif %}
+            {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <!-- Detection & Response (Technical + Compliance) -->
+        {% if payload.incident_case.detection and (audience == 'technical' or audience == 'compliance') %}
+        <div class="pm-subsection">
+            <h3>Detection & Response</h3>
+            {% if payload.incident_case.detection.method %}
+            <p><strong>Detection Method:</strong> {{ payload.incident_case.detection.method }}</p>
+            {% endif %}
+            {% if payload.incident_case.detection.response %}
+            <p><strong>Response:</strong> {{ payload.incident_case.detection.response }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <!-- Root Cause Analysis (Technical Only - Summary for Executive/Compliance) -->
+        {% if payload.incident_case.root_cause %}
+        <div class="pm-subsection">
+            <h3>Root Cause Analysis</h3>
+            {% if payload.incident_case.root_cause.primary %}
+            <p><strong>Primary Cause:</strong> {{ payload.incident_case.root_cause.primary }}</p>
+            {% endif %}
+            {% if audience == 'technical' and payload.incident_case.root_cause.five_whys %}
+            <p><strong>5 Whys:</strong></p>
+            <pre>{{ payload.incident_case.root_cause.five_whys }}</pre>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <!-- Corrective Actions (All Audiences - Summary for Executive) -->
+        {% if payload.incident_case.corrective_actions %}
+        <div class="pm-subsection">
+            <h3>Corrective Actions</h3>
+            <table class="actions-table">
+                <thead>
+                    <tr>
+                        <th>Action</th>
+                        {% if audience == 'technical' or audience == 'compliance' %}
+                        <th>Owner</th>
+                        <th>Due Date</th>
+                        {% endif %}
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for action in payload.incident_case.corrective_actions %}
+                    <tr>
+                        <td>{{ action.action }}</td>
+                        {% if audience == 'technical' or audience == 'compliance' %}
+                        <td>{{ action.owner or '-' }}</td>
+                        <td>{{ action.due_date or '-' }}</td>
+                        {% endif %}
+                        <td>{{ action.status or 'Pending' }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+        
+        <!-- Preventative Actions (All Audiences) -->
+        {% if payload.incident_case.preventative_actions %}
+        <div class="pm-subsection">
+            <h3>Preventative Actions</h3>
+            <table class="actions-table">
+                <thead>
+                    <tr>
+                        <th>Action</th>
+                        {% if audience == 'technical' or audience == 'compliance' %}
+                        <th>Owner</th>
+                        <th>Due Date</th>
+                        {% endif %}
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for action in payload.incident_case.preventative_actions %}
+                    <tr>
+                        <td>{{ action.action }}</td>
+                        {% if audience == 'technical' or audience == 'compliance' %}
+                        <td>{{ action.owner or '-' }}</td>
+                        <td>{{ action.due_date or '-' }}</td>
+                        {% endif %}
+                        <td>{{ action.status or 'Pending' }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+        
+        <!-- Lessons Learned (Executive + Technical) -->
+        {% if payload.incident_case.lessons_learned and (audience == 'executive' or audience == 'technical') %}
+        <div class="pm-subsection">
+            <h3>Lessons Learned</h3>
+            {% if payload.incident_case.lessons_learned.key_takeaways %}
+            <p><strong>Key Takeaways:</strong></p>
+            <p>{{ payload.incident_case.lessons_learned.key_takeaways }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <!-- Follow-up Items (Compliance + Technical) -->
+        {% if payload.incident_case.followup_items and (audience == 'technical' or audience == 'compliance') %}
+        <div class="pm-subsection">
+            <h3>Follow-up Items</h3>
+            <ul>
+            {% for item in payload.incident_case.followup_items %}
+                <li>{{ item.description or item.item }} - {{ item.owner or 'Unassigned' }}</li>
+            {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Risk Modelling Section (Technical Only) -->
+    {% if 'risk_modelling' in payload.modules_enabled and payload.risk_modelling and audience == 'technical' %}
+    <div class="report-section">
+        <h2>Risk Assessment</h2>
+        
+        <!--  -->
+        {% if payload.risk_modelling.risk_matrix %}
+        <div class="tm-subsection">
+            <h3>Risk Matrix</h3>
+            {% if payload.risk_modelling.risk_matrix.components %}
+            <p><strong>Components Analysed:</strong> {{ payload.risk_modelling.risk_matrix.components|join(', ') }}</p>
+            {% endif %}
+            {% if payload.risk_modelling.risk_matrix.matrix %}
+            {# Full matrix rendering #}
+            <table class="risk-matrix">
+                <thead>
+                    <tr>
+                        <th>Component</th>
+                        <th>Likelihood</th>
+                        <th>Severity</th>
+                        <th>People</th>
+                        <th>Property</th>
+                        <th>Compliance</th>
+                        <th>Priority</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for comp, risks in payload.risk_modelling.risk_matrix.matrix.items() %}
+                    <tr>
+                        <td><strong>{{ comp }}</strong></td>
+                        <td>{{ risks.spoofing or '-' }}</td>
+                        <td>{{ risks.tampering or '-' }}</td>
+                        <td>{{ risks.repudiation or '-' }}</td>
+                        <td>{{ risks.information_disclosure or '-' }}</td>
+                        <td>{{ risks.denial_of_service or '-' }}</td>
+                        <td>{{ risks.elevation_of_privilege or '-' }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        {% if payload.risk_modelling.pasta %}
+        <div class="tm-subsection">
+            <h3>Risk Analysis Notes</h3>
+            {% if payload.risk_modelling.pasta.objectives %}
+            <p><strong>Objectives:</strong> {{ payload.risk_modelling.pasta.objectives }}</p>
+            {% endif %}
+            {% if payload.risk_modelling.pasta.risks %}
+            <p><strong>Risks:</strong> {{ payload.risk_modelling.pasta.risks }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        
+        {% if payload.risk_modelling.priority_scores %}
+        <div class="tm-subsection">
+            <h3>Risk Priority Scores</h3>
+            <table class="priority-table">
+                <thead>
+                    <tr>
+                        <th>Risk Item</th>
+                        <th>Base Score</th>
+                        <th>Severity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for score in payload.risk_modelling.priority_scores %}
+                    <tr>
+                        <td>{{ score.risk_item or score.vulnerability }}</td>
+                        <td>{{ score.score or score.base_score }}</td>
+                        <td>{{ score.severity }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Evidence Files (Audience-Specific Display - Batch 7) -->
+    {% if payload.evidence %}
+        {% if audience == 'executive' %}
+        {# Executive: Summary only #}
+        <div class="report-section">
+            <h2>Evidence</h2>
+            <p><strong>{{ payload.evidence|length }} evidence items attached to this report.</p>
+        </div>
+        
+        {% elif audience == 'compliance' %}
+        {# Compliance: Chain-of-custody table #}
+        <div class="report-section">
+            <h2>Evidence Chain</h2>
+            <table class="evidence-table">
+                <thead>
+                    <tr>
+                        <th>Evidence ID</th>
+                        <th>Timestamp (UTC)</th>
+                        <th>Description</th>
+                        <th>Custodian</th>
+                        <th>File Size</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for evidence in payload.evidence %}
+                    <tr>
+                        <td><strong>{{ evidence.id or 'E-' ~ loop.index|string.zfill(3) }}</strong></td>
+                        <td>{{ evidence.timestamp or evidence.uploaded_at or '-' }}</td>
+                        <td>{{ evidence.description or evidence.filename }}</td>
+                        <td>{{ evidence.uploaded_by or 'System' }}</td>
+                        <td>{{ evidence.file_size or '-' }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                <em>Evidence preserved in accordance with chain-of-custody procedures.</em>
+            </p>
+        </div>
+        
+        {% else %}
+        {# Technical: Full detail #}
+        <div class="report-section">
+            <h2>Evidence</h2>
+            <table class="evidence-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Filename</th>
+                        <th>Description</th>
+                        <th>Timestamp</th>
+                        <th>Size</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for evidence in payload.evidence %}
+                    <tr>
+                        <td><strong>{{ evidence.id or 'E-' ~ loop.index|string.zfill(3) }}</strong></td>
+                        <td>{{ evidence.filename }}</td>
+                        <td>{{ evidence.description or '-' }}</td>
+                        <td>{{ evidence.timestamp or evidence.uploaded_at }}</td>
+                        <td>{{ evidence.file_size or '-' }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    {% endif %}
+    
+</div>
+
+<style>
+.audience-badge {
+    background: #f59e0b;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    display: inline-block;
+    margin-top: 5px;
+}
+
+.pm-subsection, .tm-subsection {
+    margin-bottom: 30px;
+}
+
+.impact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.impact-item {
+    padding: 15px;
+    background: #f9fafb;
+    border-radius: 4px;
+}
+
+.timeline-table, .actions-table, .risk-matrix, .priority-table, .evidence-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.timeline-table th, .actions-table th, .risk-matrix th, .priority-table th, .evidence-table th {
+    background: #f3f4f6;
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #e5e7eb;
+}
+
+.timeline-table td, .actions-table td, .risk-matrix td, .priority-table td, .evidence-table td {
+    padding: 8px;
+    border: 1px solid #e5e7eb;
+}
+</style>
+
+{% endblock %}

@@ -1,0 +1,110 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}PDF Export Unavailable - Facilities Management{% endblock %}
+
+{% block sidebar %}
+    {% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-title">
+    <h1>PDF Export Unavailable</h1>
+    <p>WeasyPrint library not installed</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="error-notice">
+        <h2><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon" style="color:#dc2626"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> PDF Export Library Missing</h2>
+        <p>The WeasyPrint library is required for server-side PDF generation but is not currently installed.</p>
+        
+        <h3>To Enable PDF Export:</h3>
+        <div class="code-block">
+            <code>pip install weasyprint>=68.0</code>
+        </div>
+        
+        <h3>Alternative: Browser Print</h3>
+        <p>You can still export this report using your browser's print function:</p>
+        <ol>
+            <li>
+                {% if version_no %}
+                <a href="/artefacts/{{ artefact_id }}/v/{{ version_no }}" class="btn btn-primary">View Report</a>
+                {% else %}
+                <a href="/artefacts/{{ artefact_id }}" class="btn btn-primary">View Report</a>
+                {% endif %}
+            </li>
+            <li>Press <kbd>Ctrl+P</kbd> (Windows/Linux) or <kbd>Cmd+P</kbd> (Mac)</li>
+            <li>Select "Save as PDF" as the destination</li>
+            <li>Click "Save"</li>
+        </ol>
+        
+        <h3>System Requirements:</h3>
+        <p>WeasyPrint requires the following system dependencies:</p>
+        <ul>
+            <li>Python 3.8+</li>
+            <li>Cairo graphics library</li>
+            <li>Pango text layout library</li>
+            <li>GDK-PixBuf image loading library</li>
+        </ul>
+        
+        <div class="help-links">
+            <a href="https://doc.courtbouillon.org/weasyprint/stable/first_steps.html" target="_blank" class="btn btn-secondary">WeasyPrint Installation Guide</a>
+            {% if artefact_id %}
+            <a href="/artefacts/{{ artefact_id }}/edit" class="btn btn-secondary">← Back to Editor</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.error-notice {
+    max-width: 800px;
+    margin: 40px auto;
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.error-notice h2 {
+    color: #dc2626;
+    margin-bottom: 20px;
+}
+
+.error-notice h3 {
+    color: var(--navy);
+    margin-top: 30px;
+    margin-bottom: 15px;
+}
+
+.code-block {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 15px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    margin: 15px 0;
+}
+
+.error-notice ol, .error-notice ul {
+    margin-left: 20px;
+    line-height: 1.8;
+}
+
+.error-notice kbd {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-family: monospace;
+    font-size: 13px;
+}
+
+.help-links {
+    margin-top: 30px;
+    display: flex;
+    gap: 10px;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}{{ page_title }} - Facilities Management{% endblock %}
+
+{% block sidebar %}
+    {% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-title">
+    <h1>{{ page_title }}</h1>
+    <p>{{ clients|length }} client{{ 's' if clients|length != 1 else '' }}</p>
+</div>
+<div class="topbar-actions">
+    <a href="/databases/clients/new" class="btn btn-primary">+ Add Client</a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    {% if clients %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Organisation</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Address</th>
+                <th>Created</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for client in clients %}
+            <tr>
+                <td><strong>{{ client.name }}</strong></td>
+                <td>{{ client.organisation or '-' }}</td>
+                <td>{{ client.email or '-' }}</td>
+                <td>{{ client.phone or '-' }}</td>
+                <td>{{ client.address or '-' }}</td>
+                <td>{{ client.created_at[:10] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <h3>No Clients Yet</h3>
+        <p>Add your first client to get started</p>
+        <a href="/databases/clients/new" class="btn btn-primary">+ Add Client</a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.data-table {
+    width: 100%;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.data-table thead {
+    background: var(--navy);
+    color: white;
+}
+
+.data-table th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.data-table td {
+    padding: 15px;
+    border-top: 1px solid #e5e7eb;
+    font-size: 14px;
+}
+
+.data-table tbody tr:hover {
+    background: #f8fafc;
+}
+</style>
+{% endblock %}

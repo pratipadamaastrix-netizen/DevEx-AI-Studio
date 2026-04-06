@@ -1,0 +1,27 @@
+Devex AI Studios Platform
+Version: 1.0.0
+
+Components (Devex branding):
+  - Studio Operations Console       [was: FM Operations Console]
+  - Client Comms Pipeline           [was: WhatsApp Bridge]
+  - Scope/Spec Builder              [was: Fire Door Toolkit]
+  - Delivery Documentation Engine   [was: Artefact Engine]
+  - Quote Wizard + Client Portal    [was: Project Requirements Portal]
+
+Build: 2026-03-31
+
+Quote Portal Routes:
+  GET  /quote                         Public intake wizard
+  POST /quote/submit                  Submit + AI analysis
+  GET  /quote/confirmation/<ref>      Confirmation page
+  POST /api/quote/suggest             Gemini mid-form suggestions
+  GET  /ops/quotes                    Pipeline dashboard
+  GET  /ops/quotes/<ref>              Quote detail
+  POST /ops/quotes/<ref>/status       Update status
+  POST /ops/quotes/<ref>/notes        Save notes/assignee
+  POST /ops/quotes/<ref>/reanalyse    Re-run AI
+  GET  /ops/quotes/<ref>/pdf          Export scope PDF
+
+AI:
+  Gemini 2.0 Flash  - mid-form suggestions, gap analysis, scope summary
+  DeepSeek Chat     - full scope analysis, complexity score, stack rec

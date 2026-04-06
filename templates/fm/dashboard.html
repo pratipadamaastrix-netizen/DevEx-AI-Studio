@@ -1,0 +1,378 @@
+{% extends 'layouts/app.html' %}
+
+{% block title %}FM Operations Console{% endblock %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/fm.css') }}">
+{% endblock %}
+
+{% block sidebar %}
+    {% set active_nav = 'fm_dashboard' %}
+    {% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-title">
+    <h1>FM Operations</h1>
+    <p>Facilities Management Console</p>
+</div>
+<div class="topbar-actions">
+    <button class="btn btn-primary" onclick="FM.openNewTicketModal()">+ New Ticket</button>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="fm-app" id="fm-app">
+
+    <!-- Topbar / search row -->
+    <div class="fm-topbar">
+        <div>
+            <h1>FM Operations Dashboard</h1>
+            <div class="fm-meta">Queue · Triage · Conversation · Evidence · Inbound Event Audit</div>
+        </div>
+        <div class="fm-topbar-right">
+            <input class="fm-input fm-search" id="fm-search"
+                   placeholder="Search ref, estate, unit, summary, customer" />
+            <select class="fm-select" id="fm-filter-status" onchange="FM.applyFilters()">
+                <option value="">Status: All</option>
+                <option>NEW</option>
+                <option>TRIAGED</option>
+                <option>ASSIGNED</option>
+                <option>IN_PROGRESS</option>
+                <option>WAITING_CUSTOMER</option>
+                <option>BLOCKED</option>
+                <option>DONE</option>
+                <option>CANCELLED</option>
+            </select>
+            <select class="fm-select" id="fm-filter-estate" onchange="FM.applyFilters()">
+                <option value="">Estate: All</option>
+                {% for estate in estates %}
+                <option>{{ estate }}</option>
+                {% endfor %}
+            </select>
+            <span class="fm-chip"><span class="fm-mono">ENV</span> Live</span>
+        </div>
+    </div>
+
+    <!-- KPIs -->
+    <section class="fm-kpis">
+        <div class="fm-card fm-kpi">
+            <div class="fm-label">Total tickets</div>
+            <div class="fm-value" id="kpi-total">{{ kpis.total }}</div>
+            <div class="fm-trend">All time</div>
+        </div>
+        <div class="fm-card fm-kpi">
+            <div class="fm-label">Open tickets</div>
+            <div class="fm-value" id="kpi-open">{{ kpis.open }}</div>
+            <div class="fm-trend">Excluding Done / Cancelled</div>
+        </div>
+        <div class="fm-card fm-kpi">
+            <div class="fm-label">Urgent open</div>
+            <div class="fm-value" id="kpi-urgent">{{ kpis.urgent }}</div>
+            <div class="fm-trend">Needs immediate attention</div>
+        </div>
+        <div class="fm-card fm-kpi">
+            <div class="fm-label">Pending triage</div>
+            <div class="fm-value" id="kpi-triage">{{ kpis.pending_triage }}</div>
+            <div class="fm-trend">Status: NEW</div>
+        </div>
+    </section>
+
+    <!-- Main grid -->
+    <section class="fm-grid">
+
+        <!-- Ticket queue -->
+        <div class="fm-card">
+            <div class="fm-queue-header">
+                <h2>Ticket Queue</h2>
+                <div class="fm-tabs">
+                    <div class="fm-tab active" onclick="FM.filterTab(this,'')">All</div>
+                    <div class="fm-tab" onclick="FM.filterTab(this,'urgent')">Urgent</div>
+                    <div class="fm-tab" onclick="FM.filterTab(this,'assigned')">Assigned</div>
+                    <div class="fm-tab" onclick="FM.filterTab(this,'waiting')">Waiting</div>
+                    <div class="fm-tab" onclick="FM.filterTab(this,'blocked')">Blocked</div>
+                </div>
+            </div>
+
+            <div class="fm-list" id="fm-ticket-list">
+                {% if tickets %}
+                    {% for t in tickets %}
+                    <div class="fm-ticket {% if loop.first %}active{% endif %}"
+                         id="ticket-row-{{ t.ref }}"
+                         onclick="FM.selectTicket('{{ t.ref }}')"
+                         data-ref="{{ t.ref }}"
+                         data-status="{{ t.status }}"
+                         data-priority="{{ t.priority }}"
+                         data-estate="{{ t.estate }}">
+                        <div class="fm-ticket-top">
+                            <div class="fm-ref">{{ t.ref }}</div>
+                            <div class="fm-badges">
+                                <span class="fm-badge {% if t.priority == 'urgent' %}bad{% elif t.priority == 'low' %}good{% else %}warn{% endif %}">
+                                    {{ t.priority }}
+                                </span>
+                                <span class="fm-badge warn">{{ t.status }}</span>
+                                <span class="fm-badge info">{{ t.category }}</span>
+                            </div>
+                        </div>
+                        <div class="fm-summary">{{ t.summary[:80] }}{% if t.summary|length > 80 %}…{% endif %}</div>
+                        <div class="fm-sub">
+                            {{ t.estate }}{% if t.unit %} · {{ t.unit }}{% endif %}
+                            {% if t.assignee %} · {{ t.assignee }}{% endif %}
+                            · {{ t.updated_at[:16] }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="padding:32px;text-align:center;color:var(--muted2);font-size:13px;">
+                        No tickets yet.<br>
+                        <button class="fm-btn primary" style="margin-top:12px"
+                                onclick="FM.openNewTicketModal()">Create first ticket</button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right column: conversation + detail -->
+        <div class="fm-rightcol">
+
+            <!-- Conversation thread -->
+            <div class="fm-card fm-chat" id="fm-chat-panel">
+                <div class="fm-section-title">
+                    <h2>Conversation Thread</h2>
+                    <div class="fm-badges" id="fm-thread-badges"></div>
+                </div>
+
+                <div class="fm-chatlog" id="fm-chatlog">
+                    <div style="padding:40px;text-align:center;color:var(--muted2);font-size:13px;">
+                        Select a ticket to view the conversation thread
+                    </div>
+                </div>
+
+                <div class="fm-chatbar">
+                    <input class="fm-input" id="fm-reply-input"
+                           placeholder="Type reply to customer or internal note…" />
+                    <button class="fm-btn" onclick="FM.sendAIDraft()" title="Generate AI draft">AI Draft</button>
+                    <button class="fm-btn primary" onclick="FM.sendReply()">Send</button>
+                </div>
+            </div>
+
+            <!-- Ticket detail -->
+            <div class="fm-card" id="fm-detail-panel">
+                <div class="fm-section-title">
+                    <h2>Ticket Details</h2>
+                    <span class="fm-chip fm-mono" id="fm-detail-ref">—</span>
+                </div>
+
+                <div class="fm-kv">
+                    <div class="fm-field">
+                        <label>Estate</label>
+                        <input class="fm-input" id="d-estate" />
+                    </div>
+                    <div class="fm-field">
+                        <label>Unit</label>
+                        <input class="fm-input" id="d-unit" />
+                    </div>
+                    <div class="fm-field">
+                        <label>Customer</label>
+                        <input class="fm-input" id="d-customer" />
+                    </div>
+                    <div class="fm-field">
+                        <label>Channel</label>
+                        <select class="fm-select" id="d-source">
+                            <option value="webchat">webchat</option>
+                            <option value="whatsapp">whatsapp</option>
+                            <option value="whatsapp_json">whatsapp_json</option>
+                            <option value="manual">manual</option>
+                        </select>
+                    </div>
+                    <div class="fm-field">
+                        <label>Status</label>
+                        <select class="fm-select" id="d-status">
+                            <option>NEW</option>
+                            <option>TRIAGED</option>
+                            <option>ASSIGNED</option>
+                            <option>IN_PROGRESS</option>
+                            <option>WAITING_CUSTOMER</option>
+                            <option>BLOCKED</option>
+                            <option>DONE</option>
+                            <option>CANCELLED</option>
+                        </select>
+                    </div>
+                    <div class="fm-field">
+                        <label>Priority</label>
+                        <select class="fm-select" id="d-priority">
+                            <option>low</option>
+                            <option>normal</option>
+                            <option>urgent</option>
+                        </select>
+                    </div>
+                    <div class="fm-field">
+                        <label>Category</label>
+                        <select class="fm-select" id="d-category">
+                            <option>general</option>
+                            <option>electrical</option>
+                            <option>plumbing</option>
+                            <option>hvac</option>
+                            <option>security</option>
+                            <option>carpentry</option>
+                            <option>cleaning</option>
+                            <option>painting</option>
+                            <option>pest_control</option>
+                        </select>
+                    </div>
+                    <div class="fm-field">
+                        <label>Assignee</label>
+                        <input class="fm-input" id="d-assignee" placeholder="Name or team" />
+                    </div>
+                    <div class="fm-field wide">
+                        <label>Summary</label>
+                        <input class="fm-input" id="d-summary" />
+                    </div>
+                    <div class="fm-field wide">
+                        <label>Materials / Notes</label>
+                        <textarea class="fm-input" id="d-materials" style="min-height:80px"></textarea>
+                    </div>
+                </div>
+
+                <div class="fm-hr"></div>
+                <div class="fm-actions">
+                    <a id="fm-detail-link" href="#" class="fm-btn" target="_blank">View Full Ticket ↗</a>
+                    <button class="fm-btn" onclick="FM.saveTicket()">Save</button>
+                    <button class="fm-btn" onclick="FM.requestAccessWindow()">Request Access Window</button>
+                    <button class="fm-btn primary" onclick="FM.markInProgress()">Mark In Progress</button>
+                </div>
+            </div>
+        </div><!-- /rightcol -->
+    </section><!-- /fm-grid -->
+
+    <!-- Bottom row: events + evidence -->
+    <section class="fm-bottom">
+
+        <!-- Inbound events audit log -->
+        <div class="fm-card">
+            <div class="fm-section-title">
+                <h2>Inbound Events (Webhook Audit)</h2>
+                <span class="fm-chip"><span class="fm-mono">/push/events</span></span>
+            </div>
+            <div class="fm-table-wrap">
+                <table class="fm-table">
+                    <thead>
+                        <tr>
+                            <th>Source</th>
+                            <th>Type</th>
+                            <th>Ticket</th>
+                            <th>Received (UTC)</th>
+                            <th>Status</th>
+                            <th class="fm-mono">eventId</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fm-events-tbody">
+                        {% if events %}
+                            {% for ev in events %}
+                            <tr>
+                                <td>{{ ev.source }}</td>
+                                <td>{{ ev.event_type }}</td>
+                                <td class="fm-mono">{{ ev.ticket_ref or '—' }}</td>
+                                <td>{{ ev.received_at[:16] }}</td>
+                                <td>
+                                    <span class="fm-badge {% if ev.status == 'processed' %}good{% elif ev.status == 'error' %}bad{% else %}warn{% endif %}">
+                                        {{ ev.status }}
+                                    </span>
+                                </td>
+                                <td class="fm-mono">{{ ev.event_id[:8] }}…</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="6" style="text-align:center;color:var(--muted2)">No events yet</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- WhatsApp JSON Import panel -->
+        <div class="fm-card" id="import">
+            <div class="fm-section-title">
+                <h2>WhatsApp JSON Import</h2>
+                <span class="fm-chip"><span class="fm-mono">/fm/api/import/whatsapp</span></span>
+            </div>
+
+            <div class="fm-import-panel" id="fm-drop-zone">
+                <h3>Drop a JSON file or paste below</h3>
+                <p>LLM-generated WhatsApp conversation JSON → creates FM ticket + conversation thread automatically</p>
+
+                <textarea class="fm-import-json" id="fm-import-json"
+                          placeholder='{&#10;  "customer": "Jane Azubuike",&#10;  "estate": "Ikoyi Phase 2",&#10;  "unit": "Flat 12",&#10;  "summary": "AC making loud noise",&#10;  "messages": [&#10;    {"from": "customer", "text": "...", "ts": "2026-02-26 09:42"}&#10;  ]&#10;}'></textarea>
+
+                <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+                    <button class="fm-btn" onclick="FM.importPreview()">Preview</button>
+                    <button class="fm-btn primary" id="fm-import-confirm-btn"
+                            onclick="FM.importConfirm()" style="display:none">
+                        Confirm &amp; Create Ticket
+                    </button>
+                    <button class="fm-btn" id="fm-import-clear-btn"
+                            onclick="FM.importClear()" style="display:none">
+                        Clear
+                    </button>
+                </div>
+
+                <div class="fm-import-preview" id="fm-import-preview" style="display:none"></div>
+            </div>
+        </div>
+
+    </section><!-- /fm-bottom -->
+
+</div><!-- /fm-app -->
+
+<!-- New Ticket Modal -->
+<div class="fm-modal-overlay" id="fm-new-ticket-modal">
+    <div class="fm-modal">
+        <h2>New FM Ticket</h2>
+        <div class="fm-kv">
+            <div class="fm-field">
+                <label>Estate</label>
+                <input class="fm-input" id="nt-estate" placeholder="e.g. Oak Estate" />
+            </div>
+            <div class="fm-field">
+                <label>Unit</label>
+                <input class="fm-input" id="nt-unit" placeholder="e.g. Unit 14" />
+            </div>
+            <div class="fm-field">
+                <label>Customer</label>
+                <input class="fm-input" id="nt-customer" placeholder="Full name" />
+            </div>
+            <div class="fm-field">
+                <label>Channel</label>
+                <select class="fm-select" id="nt-source">
+                    <option value="webchat">webchat</option>
+                    <option value="whatsapp">whatsapp</option>
+                    <option value="manual">manual</option>
+                </select>
+            </div>
+            <div class="fm-field wide">
+                <label>Summary / Issue Description</label>
+                <textarea class="fm-input" id="nt-summary" style="min-height:70px"
+                          placeholder="Describe the issue…"></textarea>
+            </div>
+            <div class="fm-field wide">
+                <label>First message (optional — copied into conversation thread)</label>
+                <textarea class="fm-input" id="nt-message" style="min-height:60px"
+                          placeholder="Customer's words verbatim…"></textarea>
+            </div>
+        </div>
+        <div class="fm-modal-footer">
+            <button class="fm-btn" onclick="FM.closeNewTicketModal()">Cancel</button>
+            <button class="fm-btn primary" onclick="FM.createTicket()">Create Ticket</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="fm-toast" id="fm-toast"></div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/fm/import.js') }}"></script>
+<script src="{{ url_for('static', filename='js/fm/dashboard.js') }}"></script>
+{% endblock %}

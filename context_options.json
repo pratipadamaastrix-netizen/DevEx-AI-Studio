@@ -1,0 +1,81 @@
+{
+  "journeys": [
+    "Job Intake",
+    "Site Inspection",
+    "Works in Progress",
+    "Incident Response",
+    "Compliance & Certification",
+    "Close-out & Handover",
+    "Dispute / Rework"
+  ],
+  "incident_types": [
+    "Water Leak / Flooding",
+    "Heating / Hot Water Failure",
+    "Electrical Fault",
+    "Fire Door / Fire Safety",
+    "Lift / Access Failure",
+    "Structural Damage",
+    "Mould / Damp",
+    "Pest Issue",
+    "Vandalism / Security Damage",
+    "Cleaning / Hygiene",
+    "Waste / Bin Store",
+    "Noise / Nuisance Complaint",
+    "General Maintenance",
+    "Other"
+  ],
+  "audiences": [
+    "Estate Manager",
+    "Facilities Manager",
+    "Building Manager / Concierge",
+    "Contractor / Trade Lead",
+    "Health & Safety",
+    "Compliance / Auditors",
+    "Landlord / Asset Owner",
+    "Managing Agent",
+    "Tenant Liaison",
+    "Accounts / Procurement"
+  ],
+  "analysis_frameworks": [
+    {
+      "key": "fm_triage",
+      "name": "FM Triage (SLA + Safety)",
+      "description": "Quick prioritisation using safety risk and SLA impact",
+      "versions": [
+        "1.0"
+      ]
+    },
+    {
+      "key": "hs_risk",
+      "name": "Health & Safety Risk Check",
+      "description": "Basic hazard check: people risk, access, isolation, containment",
+      "versions": [
+        "1.0"
+      ]
+    },
+    {
+      "key": "compliance_check",
+      "name": "Compliance Checklist",
+      "description": "Evidence-first checklist for certificates, inspections, and sign-off",
+      "versions": [
+        "1.0"
+      ]
+    },
+    {
+      "key": "root_cause",
+      "name": "Root Cause Review (5 Whys)",
+      "description": "Simple RCA structure for recurring faults and contractor performance",
+      "versions": [
+        "1.0"
+      ]
+    },
+    {
+      "key": "handover_pack",
+      "name": "Handover Pack",
+      "description": "Close-out pack: before/after, notes, materials, approvals, invoices",
+      "versions": [
+        "1.0"
+      ]
+    }
+  ]
+}

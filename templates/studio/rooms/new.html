@@ -1,0 +1,78 @@
+{% extends "layouts/app.html" %}
+{% block title %}New Meeting Room — Devex AI Studios{% endblock %}
+
+{% block extra_styles %}
+<style>
+.nr-shell{max-width:620px;margin:0 auto;padding:48px 0}
+.nr-card{background:#fff;border:1.5px solid #d6e2f0;border-radius:12px;padding:36px}
+.nr-title{font-size:22px;font-weight:700;color:#0f172a;margin-bottom:6px}
+.nr-sub{font-size:14px;color:#5b6b82;margin-bottom:28px;line-height:1.5}
+.form-group{margin-bottom:20px}
+.form-label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:7px}
+.form-input{width:100%;padding:10px 14px;border:1.5px solid #d6e2f0;border-radius:8px;
+            font-size:14px;font-family:'DM Sans',sans-serif;color:#0f172a;outline:none;
+            transition:border-color .15s}
+.form-input:focus{border-color:#2563eb}
+.btn-row{display:flex;gap:12px;margin-top:24px}
+.btn{padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;
+     border:none;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:#2563eb;color:#fff}
+.btn-primary:hover{background:#1d4ed8}
+.btn-secondary{background:#fff;color:#5b6b82;border:1.5px solid #d6e2f0}
+.btn-secondary:hover{border-color:#93c5fd}
+.divider{border-top:1px solid #eef3fa;margin:28px 0;position:relative}
+.divider-text{position:absolute;top:-10px;left:50%;transform:translateX(-50%);
+              background:#fff;padding:0 12px;font-size:12px;color:#94a3b8;font-weight:600}
+.seed-card{background:#f5f8fc;border:1.5px solid #d6e2f0;border-radius:10px;padding:20px;
+           text-align:center}
+.seed-card h3{font-size:15px;font-weight:700;color:#0f172a;margin-bottom:6px}
+.seed-card p{font-size:13px;color:#5b6b82;margin-bottom:16px;line-height:1.5}
+</style>
+{% endblock %}
+
+{% block sidebar %}
+  {% set active_nav = 'meeting_rooms' %}
+  {% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-title">
+  <h1>New Meeting Room</h1>
+  <p><a href="/studio/rooms" style="color:#64748b;text-decoration:none">← Back to Meeting Rooms</a></p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="nr-shell">
+  <div class="nr-card">
+    <div class="nr-title">Create Meeting Room</div>
+    <div class="nr-sub">A meeting room is a shared collaboration space for scoping a project with your client.</div>
+
+    <form method="POST" action="/studio/rooms/new">
+      <div class="form-group">
+        <label class="form-label">Room Title</label>
+        <input class="form-input" type="text" name="title" placeholder="e.g. ClientCo x Devex — Portal Build" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Client Name</label>
+        <input class="form-input" type="text" name="client_name" placeholder="e.g. POP Telecom">
+      </div>
+      <div class="btn-row">
+        <button type="submit" class="btn btn-primary">Create Empty Room</button>
+        <a href="/studio/rooms" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+
+    <div class="divider"><span class="divider-text">or</span></div>
+
+    <div class="seed-card">
+      <h3>POP Telecom x Broadband Buddy</h3>
+      <p>Create a pre-populated room with all Architecture, Products, Commercial, and Integration clarification questions.</p>
+      <form method="POST" action="/studio/rooms/new">
+        <input type="hidden" name="seed_pop" value="1">
+        <button type="submit" class="btn btn-primary">Create POP Room</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,174 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Quote Pipeline — Devex AI Studios{% endblock %}
+
+{% block extra_styles %}
+<style>
+/* ── KPI row ── */
+.kpi-row{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;margin-bottom:28px}
+.kpi-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;padding:16px 18px;text-align:center;cursor:pointer;transition:all .2s;text-decoration:none;color:inherit}
+.kpi-card:hover{border-color:#94a3b8;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.kpi-card.active{border-color:var(--blue,#2563eb);background:#eff6ff}
+.kpi-num{font-size:26px;font-weight:700;color:#0d1117;margin-bottom:3px}
+.kpi-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#64748b}
+.kpi-card[data-status="NEW"] .kpi-num{color:#0284c7}
+.kpi-card[data-status="REVIEWING"] .kpi-num{color:#d97706}
+.kpi-card[data-status="SCOPED"] .kpi-num{color:#7c3aed}
+.kpi-card[data-status="SENT"] .kpi-num{color:#0d9488}
+.kpi-card[data-status="WON"] .kpi-num{color:#16a34a}
+.kpi-card[data-status="LOST"] .kpi-num{color:#dc2626}
+
+/* ── Toolbar ── */
+.toolbar{display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
+.search-wrap{position:relative;flex:1;min-width:200px}
+.search-wrap input{width:100%;padding:9px 14px 9px 36px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:#fff;outline:none;transition:border .2s}
+.search-wrap input:focus{border-color:#2563eb}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:14px;pointer-events:none}
+.btn{padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.btn-primary{background:#2563eb;color:#fff}
+.btn-primary:hover{background:#1d4ed8}
+.btn-ghost{background:#fff;color:#475569;border:1.5px solid #e2e8f0}
+.btn-ghost:hover{border-color:#94a3b8;color:#0d1117}
+.btn-ghost.active{border-color:#2563eb;color:#2563eb;background:#eff6ff}
+
+/* ── Table ── */
+.table-wrap{background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;overflow:hidden}
+.qtable{width:100%;border-collapse:collapse}
+.qtable th{padding:11px 16px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#64748b;background:#f8fafc;border-bottom:1.5px solid #e2e8f0}
+.qtable td{padding:12px 16px;font-size:13px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+.qtable tr:last-child td{border-bottom:none}
+.qtable tr:hover td{background:#f8fafc}
+.qtable tr{cursor:pointer}
+
+/* ── Status badge ── */
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;letter-spacing:.05em}
+.status-NEW{background:#e0f2fe;color:#0369a1}
+.status-REVIEWING{background:#fef3c7;color:#92400e}
+.status-SCOPED{background:#ede9fe;color:#6d28d9}
+.status-SENT{background:#ccfbf1;color:#065f46}
+.status-WON{background:#dcfce7;color:#15803d}
+.status-LOST{background:#fee2e2;color:#b91c1c}
+.status-ARCHIVED{background:#f1f5f9;color:#64748b}
+
+/* ── Complexity badge ── */
+.cx-badge{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}
+.cx-Low{background:#dcfce7;color:#15803d}
+.cx-Medium{background:#fef9c3;color:#854d0e}
+.cx-High{background:#fee2e2;color:#b91c1c}
+.cx-Enterprise{background:#f3e8ff;color:#7c3aed}
+
+/* ── Empty state ── */
+.empty{text-align:center;padding:60px 20px;color:#94a3b8}
+.empty-icon{font-size:40px;margin-bottom:14px;opacity:.4}
+.empty h3{font-size:15px;font-weight:600;color:#475569;margin-bottom:6px}
+
+/* ── Row actions ── */
+.row-ref{font-family:'DM Mono',monospace;font-size:12px;color:#64748b;font-weight:500}
+.row-name{font-weight:600;color:#0d1117}
+.row-company{font-size:12px;color:#64748b;margin-top:1px}
+.row-type{font-size:12px;color:#475569}
+.row-date{font-size:12px;color:#94a3b8}
+</style>
+{% endblock %}
+
+{% block sidebar %}
+    {% set active_nav = 'quotes' %}
+    {% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-title">
+  <h1>Quote Pipeline</h1>
+  <p>Project requirements & scope requests</p>
+</div>
+<div class="topbar-actions">
+  <a href="/quote" class="btn btn-primary" target="_blank">+ New Quote Request</a>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- KPI row -->
+<div class="kpi-row">
+  <a class="kpi-card {% if not status_filter %}active{% endif %}" href="/ops/quotes">
+    <div class="kpi-num">{{ kpis.total }}</div>
+    <div class="kpi-label">All</div>
+  </a>
+  {% for s, label in [('NEW','New'),('REVIEWING','Reviewing'),('SCOPED','Scoped'),('SENT','Sent'),('WON','Won'),('LOST','Lost')] %}
+  <a class="kpi-card {% if status_filter == s %}active{% endif %}" href="/ops/quotes?status={{ s }}" data-status="{{ s }}">
+    <div class="kpi-num">{{ kpis[s.lower()] }}</div>
+    <div class="kpi-label">{{ label }}</div>
+  </a>
+  {% endfor %}
+</div>
+
+<!-- Toolbar -->
+<form method="GET" action="/ops/quotes">
+  <input type="hidden" name="status" value="{{ status_filter or '' }}">
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" name="q" value="{{ search or '' }}"
+             placeholder="Search by name, company, ref...">
+    </div>
+    <button type="submit" class="btn btn-ghost">Search</button>
+    {% if status_filter or search %}
+    <a href="/ops/quotes" class="btn btn-ghost">✕ Clear</a>
+    {% endif %}
+  </div>
+</form>
+
+<!-- Table -->
+<div class="table-wrap">
+  {% if quotes %}
+  <table class="qtable">
+    <thead>
+      <tr>
+        <th>Ref</th>
+        <th>Contact</th>
+        <th>Project</th>
+        <th>Type</th>
+        <th>Complexity</th>
+        <th>Status</th>
+        <th>Submitted</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for q in quotes %}
+      <tr onclick="window.location='/ops/quotes/{{ q.ref }}'">
+        <td><span class="row-ref">{{ q.ref }}</span></td>
+        <td>
+          <div class="row-name">{{ q.contact_name or '—' }}</div>
+          <div class="row-company">{{ q.company_name or '' }}</div>
+        </td>
+        <td>{{ q.project_name or '—' }}</td>
+        <td class="row-type">{{ (q.project_type or '').replace('_',' ').title() }}</td>
+        <td>
+          {% if q.complexity_score %}
+          <span class="cx-badge cx-{{ q.complexity_score }}">{{ q.complexity_score }}</span>
+          {% if q.estimated_weeks %}<span style="font-size:11px;color:#94a3b8;margin-left:4px">~{{ q.estimated_weeks }}w</span>{% endif %}
+          {% else %}
+          <span style="color:#cbd5e1;font-size:12px">—</span>
+          {% endif %}
+        </td>
+        <td>
+          <span class="status-badge status-{{ q.status }}">
+            {% set dots = {'NEW':'●','REVIEWING':'◐','SCOPED':'◑','SENT':'◕','WON':'✓','LOST':'✕','ARCHIVED':'○'} %}
+            {{ dots.get(q.status, '●') }} {{ q.status.replace('_',' ') }}
+          </span>
+        </td>
+        <td class="row-date">{{ q.created_at[:10] if q.created_at else '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">
+    <div class="empty-icon">📋</div>
+    <h3>No quotes found</h3>
+    <p>{% if search or status_filter %}Try adjusting your filters{% else %}Share the <a href="/quote">quote wizard</a> with a client to get started{% endif %}</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

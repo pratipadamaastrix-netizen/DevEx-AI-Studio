@@ -1,0 +1,26 @@
+#!/bin/bash
+cd "$(dirname "$0")"
+
+echo ""
+echo " ========================================================="
+echo "  DevEx Studios Platform"
+echo " ========================================================="
+echo ""
+echo " [1/3] Installing dependencies..."
+pip3 install Flask requests Pillow reportlab --quiet
+echo " Done."
+echo ""
+echo " [2/3] Checking API keys..."
+[ -z "$DEEPSEEK_API_KEY" ]   && echo "  [WARN] DEEPSEEK_API_KEY not set"
+[ -z "$GEMINI_API_KEY" ]     && echo "  [WARN] GEMINI_API_KEY not set"
+[ -z "$TWILIO_ACCOUNT_SID" ] && echo "  [WARN] TWILIO_ACCOUNT_SID not set"
+[ -z "$TWILIO_AUTH_TOKEN" ]  && echo "  [WARN] TWILIO_AUTH_TOKEN not set"
+[ -z "$TWILIO_WA_FROM" ]     && echo "  [WARN] TWILIO_WA_FROM not set"
+echo ""
+echo " [3/3] Starting..."
+echo ""
+echo "   http://localhost:5000"
+echo "   http://localhost:5000/fm"
+echo "   http://localhost:5000/wa/monitor"
+echo ""
+python3 app.py

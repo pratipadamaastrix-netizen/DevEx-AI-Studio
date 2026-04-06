@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Devex AI Studios — Intelligent Software for Growing Businesses</title>
+<meta name="description" content="Devex AI Studios builds websites, web apps, and mobile applications with embedded AI. Get a scope and estimate in minutes.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dx.css') }}">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: #F8FAFC; color: #1E293B; }
+
+/* ── Navigation ── */
+.nav {
+    background: #0D1117;
+    border-bottom: 1px solid rgba(255,255,255,.07);
+    padding: 0 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.nav-brand .mark {
+    width: 30px;
+    height: 30px;
+    background: #2563EB;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+}
+
+.nav-links a {
+    color: #8B949E;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color .15s;
+}
+
+.nav-links a:hover { color: #fff; }
+
+.nav-cta {
+    background: #2563EB;
+    color: #fff !important;
+    padding: 8px 18px;
+    border-radius: 7px;
+    font-weight: 600 !important;
+}
+
+.nav-cta:hover { background: #1D4ED8 !important; color: #fff !important; }
+
+/* ── Hero ── */
+.hero {
+    background: linear-gradient(155deg, #0D1117 0%, #0A1929 50%, #0D2340 100%);
+    color: #fff;
+    padding: 96px 48px 80px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -10%;
+    width: 120%;
+    height: 200%;
+    background: radial-gradient(ellipse at 50% 40%, rgba(37,99,235,.15) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.hero-eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: #3B82F6;
+    margin-bottom: 18px;
+    position: relative;
+}
+
+.hero-title {
+    font-size: clamp(36px, 5.5vw, 60px);
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 22px;
+    color: #F1F5F9;
+    position: relative;
+}
+
+.hero-title em {
+    font-style: normal;
+    color: #60A5FA;
+}
+
+.hero-sub {
+    font-size: 18px;
+    color: #8B949E;
+    max-width: 560px;
+    margin: 0 auto 40px;
+    line-height: 1.65;
+    position: relative;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+    position: relative;
+}
+
+.btn-hero-primary {
+    background: #2563EB;
+    color: #fff;
+    padding: 14px 30px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background .15s, transform .1s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-hero-primary:hover {
+    background: #1D4ED8;
+    transform: translateY(-1px);
+}
+
+.btn-hero-outline {
+    background: transparent;
+    color: #E2E8F0;
+    border: 1.5px solid rgba(255,255,255,.2);
+    padding: 14px 30px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: border-color .15s;
+}
+
+.btn-hero-outline:hover { border-color: rgba(255,255,255,.5); }
+
+.hero-stats {
+    display: flex;
+    justify-content: center;
+    gap: 48px;
+    margin-top: 64px;
+    padding-top: 40px;
+    border-top: 1px solid rgba(255,255,255,.07);
+    flex-wrap: wrap;
+}
+
+.hero-stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #E2E8F0;
+    margin-bottom: 4px;
+}
+
+.hero-stat-label {
+    font-size: 13px;
+    color: #64748B;
+}
+
+/* ── Services grid ── */
+.section {
+    padding: 80px 48px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.section-eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #2563EB;
+    margin-bottom: 12px;
+}
+
+.section-title {
+    font-size: clamp(26px, 3.5vw, 40px);
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 14px;
+    line-height: 1.2;
+}
+
+.section-sub {
+    font-size: 16px;
+    color: #64748B;
+    max-width: 520px;
+    line-height: 1.65;
+    margin-bottom: 48px;
+}
+
+.services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.service-card {
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 28px;
+    transition: box-shadow .2s, border-color .2s, transform .2s;
+}
+
+.service-card:hover {
+    border-color: #BFDBFE;
+    box-shadow: 0 8px 30px rgba(37,99,235,.08);
+    transform: translateY(-2px);
+}
+
+.service-icon {
+    width: 48px;
+    height: 48px;
+    background: #EFF6FF;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    margin-bottom: 18px;
+}
+
+.service-name {
+    font-size: 17px;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 8px;
+}
+
+.service-desc {
+    font-size: 14px;
+    color: #64748B;
+    line-height: 1.65;
+}
+
+/* ── Process section ── */
+.process-bg {
+    background: #F1F5F9;
+    border-top: 1px solid #E5E7EB;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.process-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+}
+
+.process-step {
+    text-align: center;
+    padding: 8px;
+}
+
+.process-num {
+    width: 44px;
+    height: 44px;
+    background: #2563EB;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 auto 16px;
+}
+
+.process-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 8px;
+}
+
+.process-desc {
+    font-size: 13px;
+    color: #64748B;
+    line-height: 1.6;
+}
+
+/* ── CTA ── */
+.cta-section {
+    background: linear-gradient(135deg, #0D1117 0%, #1E3A5F 100%);
+    color: #fff;
+    text-align: center;
+    padding: 80px 48px;
+}
+
+.cta-title {
+    font-size: clamp(28px, 3.5vw, 42px);
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: #F1F5F9;
+}
+
+.cta-sub {
+    font-size: 17px;
+    color: #8B949E;
+    max-width: 480px;
+    margin: 0 auto 36px;
+    line-height: 1.65;
+}
+
+/* ── Footer ── */
+.footer {
+    background: #0D1117;
+    border-top: 1px solid rgba(255,255,255,.07);
+    padding: 40px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: #8B949E;
+    font-size: 14px;
+}
+
+.footer-brand .mark {
+    width: 26px;
+    height: 26px;
+    background: #2563EB;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 800;
+    color: #fff;
+}
+
+.footer-links {
+    display: flex;
+    gap: 24px;
+}
+
+.footer-links a {
+    color: #64748B;
+    text-decoration: none;
+    font-size: 13px;
+    transition: color .15s;
+}
+
+.footer-links a:hover { color: #8B949E; }
+
+@media (max-width: 768px) {
+    .nav { padding: 0 20px; }
+    .nav-links { gap: 16px; }
+    .hero { padding: 60px 24px 60px; }
+    .section { padding: 60px 24px; }
+    .process-grid { grid-template-columns: repeat(2, 1fr); }
+    .footer { padding: 32px 24px; flex-direction: column; align-items: flex-start; }
+}
+/* ================= CHATBOT ================= */
+
+#chat-toggle{
+position:fixed;
+bottom:20px;
+right:20px;
+background:#2563eb;
+color:white;
+padding:12px 20px;
+border-radius:25px;
+cursor:pointer;
+font-weight:600;
+z-index:999999;
+box-shadow:0 6px 18px rgba(0,0,0,0.25);
+}
+
+/* Chat window */
+
+#chat-box{
+position:fixed;
+bottom:80px;
+right:20px;
+width:340px;
+height:480px;
+background:white;
+border-radius:12px;
+box-shadow:0 10px 40px rgba(0,0,0,0.25);
+display:none;
+flex-direction:column;
+overflow:hidden;
+z-index:9999;
+}
+
+/* Header */
+
+#chat-header{
+background:#2563eb;
+color:white;
+padding:12px;
+font-weight:600;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+/* Message area */
+
+#chat-messages{
+flex:1;
+padding:12px;
+overflow-y:auto;
+background:#f1f5f9;
+display:flex;
+flex-direction:column;
+gap:8px;
+}
+
+/* Bot bubble */
+
+.bot-msg{
+background:white;
+padding:10px 14px;
+border-radius:14px;
+max-width:75%;
+align-self:flex-start;
+box-shadow:0 2px 6px rgba(0,0,0,0.08);
+}
+
+/* User bubble */
+
+.user-msg{
+background:#2563eb;
+color:white;
+padding:10px 14px;
+border-radius:14px;
+max-width:75%;
+align-self:flex-end;
+}
+
+/* Input area */
+
+#chat-input-area{
+display:flex;
+align-items:center;
+padding:10px;
+border-top:1px solid #e5e7eb;
+gap:6px;
+background:white;
+}
+
+#chat-input{
+flex:1;
+padding:10px;
+border:1px solid #cbd5e1;
+border-radius:20px;
+outline:none;
+}
+
+#send-btn{
+background:#2563eb;
+color:white;
+border:none;
+border-radius:50%;
+width:36px;
+height:36px;
+cursor:pointer;
+font-size:16px;
+}
+
+#upload-btn{
+background:#e2e8f0;
+border:none;
+border-radius:50%;
+width:36px;
+height:36px;
+cursor:pointer;
+font-size:16px;
+}
+
+/* Close button */
+
+#close-chat{
+cursor:pointer;
+font-size:16px;
+}
+
+#previewContainer{
+padding:6px;
+display:flex;
+gap:6px;
+flex-wrap:wrap;
+background:white;
+}
+
+#previewContainer img{
+width:70px;
+border-radius:8px;
+}
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav">
+    <a href="/" class="nav-brand">
+        <div class="mark">DX</div>
+        Devex AI Studios
+    </a>
+    <div class="nav-links">
+        <a href="/services">Services</a>
+        <a href="/quote">Get a Quote</a>
+        <a href="/contact">Contact</a>
+        <a href="/projects" class="nav-cta">Client Login</a>
+    </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+    <div class="hero-eyebrow">AI-Powered Software Agency</div>
+    <h1 class="hero-title">
+        We build software that<br>
+        <em>works for your business</em>
+    </h1>
+    <p class="hero-sub">
+        Websites, web apps, and mobile applications with AI built in from the start.
+        Tell us what you need and get a full scope estimate before we even speak.
+    </p>
+    <div class="hero-actions">
+        <a href="/quote" class="btn-hero-primary">
+            Get Your Free Estimate &rarr;
+        </a>
+        <a href="/services" class="btn-hero-outline">
+            View Our Services
+        </a>
+    </div>
+    <div class="hero-stats">
+        <div>
+            <div class="hero-stat-value">48h</div>
+            <div class="hero-stat-label">Average response time</div>
+        </div>
+        <div>
+            <div class="hero-stat-value">AI</div>
+            <div class="hero-stat-label">Instant scope estimate</div>
+        </div>
+        <div>
+            <div class="hero-stat-value">UK</div>
+            <div class="hero-stat-label">Based team</div>
+        </div>
+        <div>
+            <div class="hero-stat-value">100%</div>
+            <div class="hero-stat-label">Transparent pricing</div>
+        </div>
+    </div>
+</section>
+
+<!-- Services -->
+<section class="section">
+    <div class="section-eyebrow">What We Build</div>
+    <h2 class="section-title">Digital products that solve real problems</h2>
+    <p class="section-sub">
+        From a simple brochure site to a complex multi-tenant platform, we scope, build, and support
+        software that fits your budget and timeline.
+    </p>
+    <div class="services-grid">
+        <div class="service-card">
+            <div class="service-icon">🌐</div>
+            <div class="service-name">Websites</div>
+            <div class="service-desc">
+                Brochure sites, landing pages, portfolios, and content sites.
+                Fast, mobile-first, and built to rank.
+            </div>
+        </div>
+        <div class="service-card">
+            <div class="service-icon">⚙️</div>
+            <div class="service-name">Web Applications</div>
+            <div class="service-desc">
+                Dashboards, platforms, and internal tools. User authentication, data management,
+                and workflow automation.
+            </div>
+        </div>
+        <div class="service-card">
+            <div class="service-icon">📱</div>
+            <div class="service-name">Mobile Apps</div>
+            <div class="service-desc">
+                iOS and Android applications, from consumer apps to enterprise tools.
+                Native and cross-platform.
+            </div>
+        </div>
+        <div class="service-card">
+            <div class="service-icon">🛒</div>
+            <div class="service-name">eCommerce</div>
+            <div class="service-desc">
+                Online stores, marketplaces, and subscription platforms with payment processing
+                and order management.
+            </div>
+        </div>
+        <div class="service-card">
+            <div class="service-icon">🤖</div>
+            <div class="service-name">AI Integration</div>
+            <div class="service-desc">
+                Embed AI into your existing product or build AI-first tools. Chatbots,
+                classification, generation, and analysis.
+            </div>
+        </div>
+        <div class="service-card">
+            <div class="service-icon">🏢</div>
+            <div class="service-name">Client Portals</div>
+            <div class="service-desc">
+                Secure login areas, document sharing, status tracking, and self-service tools
+                for your customers.
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Process -->
+<div class="process-bg">
+    <section class="section">
+        <div class="section-eyebrow">How It Works</div>
+        <h2 class="section-title">From brief to build in four steps</h2>
+        <p class="section-sub">
+            No lengthy discovery calls before you know whether we are a fit.
+            Our AI generates a scope estimate the moment you submit your brief.
+        </p>
+        <div class="process-grid">
+            <div class="process-step">
+                <div class="process-num">1</div>
+                <div class="process-title">Submit Your Brief</div>
+                <div class="process-desc">
+                    Complete our 6-step project wizard. Takes about five minutes.
+                </div>
+            </div>
+            <div class="process-step">
+                <div class="process-num">2</div>
+                <div class="process-title">AI Scope Estimate</div>
+                <div class="process-desc">
+                    Our AI analyses your requirements and generates a complexity rating,
+                    timeline, and recommended stack.
+                </div>
+            </div>
+            <div class="process-step">
+                <div class="process-num">3</div>
+                <div class="process-title">We Review &amp; Respond</div>
+                <div class="process-desc">
+                    Our team reviews the AI estimate, refines it, and sends you a detailed proposal
+                    within 48 hours.
+                </div>
+            </div>
+            <div class="process-step">
+                <div class="process-num">4</div>
+                <div class="process-title">We Build It</div>
+                <div class="process-desc">
+                    Agreed scope, clear milestones, regular updates.
+                    You track progress through your client portal.
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- CTA -->
+<section class="cta-section">
+    <h2 class="cta-title">Ready to scope your project?</h2>
+    <p class="cta-sub">
+        Get a free scope estimate in minutes. No commitment, no sales call required.
+    </p>
+    <div class="hero-actions">
+        <a href="/quote" class="btn-hero-primary">Start Your Brief &rarr;</a>
+        <a href="/contact" class="btn-hero-outline">Talk to Us First</a>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+    <a href="/" class="footer-brand">
+        <div class="mark">DX</div>
+        Devex AI Studios
+    </a>
+    <div class="footer-links">
+        <a href="/services">Services</a>
+        <a href="/quote">Get a Quote</a>
+        <a href="/contact">Contact</a>
+        <a href="/projects">Client Login</a>
+        <a href="/login">Staff Login</a>
+    </div>
+    <div style="color:#475569;font-size:12px;">&copy; 2026 Devex AI Studios. All rights reserved.</div>
+</footer>
+
+<!-- ================= AI CHATBOT ================= -->
+
+<div id="chat-toggle">💬 Contact Us</div>
+
+<div id="chat-box">
+
+<div id="chat-header">
+DevEx AI Assistant
+<span id="close-chat">✖</span>
+</div>
+
+<div id="chat-messages">
+<div class="bot-msg">
+👋 Welcome to DevEx! Ask me anything.
+</div>
+</div>
+
+<div id="chat-input-area">
+
+<input type="file" id="fileInput" accept="image/*" multiple hidden>
+
+<button id="upload-btn">📎</button>
+
+<input type="text" id="chat-input" placeholder="Type a message...">
+
+<button id="send-btn">➤</button>
+
+</div>
+
+<!-- IMAGE PREVIEW AREA -->
+<div id="previewContainer"></div>
+
+</div>
+
+<script>
+
+
+document.addEventListener("DOMContentLoaded", function(){
+
+const uploadBtn = document.getElementById("upload-btn");
+const fileInput = document.getElementById("fileInput");
+const chatToggle = document.getElementById("chat-toggle");
+const chatBox = document.getElementById("chat-box");
+const sendBtn = document.getElementById("send-btn");
+const chatMessages = document.getElementById("chat-messages");
+const chatInput = document.getElementById("chat-input");
+const closeChat = document.getElementById("close-chat");
+
+let selectedFiles = [];
+const previewContainer = document.getElementById("previewContainer");
+
+/* FILE SELECT */
+
+fileInput.addEventListener("change", function(){
+handleFiles(this.files);
+});
+
+/* HANDLE FILES */
+
+function handleFiles(files){
+
+for(let file of files){
+
+selectedFiles.push(file);
+showPreview(file);
+
+}
+
+}
+
+/* SHOW PREVIEW */
+
+function showPreview(file){
+
+let div = document.createElement("div");
+div.style.position="relative";
+
+let remove = document.createElement("span");
+remove.innerText="❌";
+remove.style.position="absolute";
+remove.style.top="0";
+remove.style.right="0";
+remove.style.cursor="pointer";
+
+remove.onclick = () => {
+selectedFiles = selectedFiles.filter(f => f !== file);
+div.remove();
+};
+
+let img = document.createElement("img");
+img.src = URL.createObjectURL(file);
+
+div.appendChild(img);
+div.appendChild(remove);
+
+previewContainer.appendChild(div);
+
+}
+/* Upload button click */
+
+uploadBtn.onclick = () => fileInput.click();
+
+/* Open chat */
+
+chatToggle.onclick = () => {
+chatBox.style.display="flex";
+}
+
+/* Close chat */
+
+closeChat.onclick = () => {
+chatBox.style.display="none";
+}
+
+/* Send message function */
+
+async function sendMessage(){
+
+let text = chatInput.value.trim();
+
+/* stop if nothing */
+
+if(!text && selectedFiles.length===0) return;
+
+/* Show user text */
+
+if(text){
+chatMessages.innerHTML += `
+<div class="user-msg">${text}</div>
+`;
+}
+
+/* Show uploaded images in chat */
+
+selectedFiles.forEach(file=>{
+let imgURL = URL.createObjectURL(file);
+
+chatMessages.innerHTML += `
+<div class="user-msg">
+<img src="${imgURL}" style="width:120px;border-radius:8px;">
+</div>
+`;
+});
+
+/* clear input */
+
+chatInput.value="";
+
+/* auto scroll */
+
+chatMessages.scrollTop = chatMessages.scrollHeight;
+
+/* Prepare form data */
+
+let formData = new FormData();
+
+formData.append("message", text);
+
+/* append images */
+
+selectedFiles.forEach(file=>{
+formData.append("images", file);
+});
+
+/* send to backend */
+
+let res = await fetch("/ai/chat",{
+method:"POST",
+body:formData
+});
+
+let data = await res.json();
+
+/* show bot reply */
+
+chatMessages.innerHTML += `
+<div class="bot-msg">${data.reply}</div>
+`;
+
+/* auto scroll again */
+
+chatMessages.scrollTop = chatMessages.scrollHeight;
+
+/* reset images */
+
+selectedFiles = [];
+previewContainer.innerHTML="";
+
+}
+
+/* Send button click */
+
+sendBtn.onclick = sendMessage;
+
+/* Enter key send */
+
+chatInput.addEventListener("keypress",function(e){
+if(e.key==="Enter"){
+sendMessage();
+}
+});
+});
+
+
+</script>
+
+</body>
+</html>

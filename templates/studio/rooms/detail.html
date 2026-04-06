@@ -1,0 +1,686 @@
+{% extends "layouts/app.html" %}
+{% block title %}{{ room.title }} — Meeting Room{% endblock %}
+
+{% set is_admin = is_admin if is_admin is defined else true %}
+{% set pct = ((answered_q / total_q) * 100)|int if total_q else 0 %}
+{% set status_labels = {'draft':'Draft','in_clarification':'In Clarification','scoped':'Scoped','in_build':'In Build','delivered':'Delivered'} %}
+
+{% block extra_styles %}
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   MEETING ROOM — Full-screen workspace.
+   Based on POP_BB_Clarification_Form.html interaction pattern.
+   ═══════════════════════════════════════════════════════════════ */
+
+.container{max-width:none !important;padding:0 !important;overflow:hidden}
+
+/* ── Room Banner ─────────────────────────────────────────────── */
+.room-banner{
+  background:#0c1525;padding:18px 28px 14px;
+  border-bottom:2px solid rgba(37,99,235,.3);
+  position:relative;z-index:10;flex-shrink:0}
+.rb-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.rb-brand{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#2563eb;margin-bottom:3px}
+.rb-title{font-size:17px;font-weight:700;color:#f1f5f9}
+.rb-sub{font-size:11px;color:rgba(255,255,255,.35);margin-top:2px;display:flex;gap:10px;align-items:center}
+.rb-sub a{color:#60a5fa;text-decoration:none}
+
+.rb-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rb-badge{padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700}
+.badge-admin{background:rgba(37,99,235,.16);color:#60a5fa;border:1px solid rgba(37,99,235,.3)}
+.badge-client{background:rgba(245,158,11,.14);color:#fbbf24;border:1px solid rgba(245,158,11,.3)}
+.badge-status{background:rgba(255,255,255,.06);color:#8b9bb4}
+.badge-in_clarification{background:rgba(245,158,11,.12);color:#fbbf24}
+.badge-scoped{background:rgba(34,197,94,.12);color:#4ade80}
+.badge-in_build{background:rgba(37,99,235,.15);color:#60a5fa}
+
+.rb-progress{display:flex;align-items:center;gap:10px}
+.rb-prog-bar{width:160px;height:5px;background:rgba(255,255,255,.08);border-radius:6px;overflow:hidden}
+.rb-prog-fill{height:5px;background:#2563eb;border-radius:6px;transition:width .4s}
+.rb-prog-label{font-size:11px;color:rgba(255,255,255,.35);font-family:'DM Mono',monospace}
+
+/* ── Layout: rail + canvas + aside ───────────────────────────── */
+.room-body{display:flex;flex:1;overflow:hidden;height:calc(100vh - 130px)}
+
+/* ── Left nav rail ───────────────────────────────────────────── */
+.room-nav{width:210px;background:#0a1628;flex-shrink:0;overflow-y:auto;
+          padding:14px 0;border-right:1px solid rgba(255,255,255,.05)}
+.rn-group{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+          color:rgba(255,255,255,.18);padding:14px 14px 5px}
+.rn-item{display:flex;align-items:center;gap:9px;padding:7px 14px;cursor:pointer;
+         font-size:11.5px;font-weight:500;color:rgba(255,255,255,.4);
+         transition:all .1s;border-left:2px solid transparent;user-select:none}
+.rn-item:hover{color:rgba(255,255,255,.75);background:rgba(255,255,255,.03)}
+.rn-item.active{color:#fff;border-left-color:#2563eb;background:rgba(37,99,235,.14)}
+.rn-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:rgba(255,255,255,.12)}
+.rn-dot.complete{background:#22c55e}
+.rn-dot.partial{background:#f59e0b}
+.rn-item-summary{margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.05)}
+
+/* ── Main canvas ─────────────────────────────────────────────── */
+.room-canvas{flex:1;overflow-y:auto;background:#f4f7fd;padding:0}
+
+.room-section{display:none;padding:28px 36px 60px;max-width:860px}
+.room-section.active{display:block}
+
+/* Section header */
+.rs-eyebrow{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#2563eb;margin-bottom:5px}
+.rs-title{font-size:20px;font-weight:700;color:#0f172a;margin-bottom:6px}
+.rs-desc{font-size:13px;color:#5b6b82;line-height:1.6;margin-bottom:4px}
+.rs-rule{height:2px;background:linear-gradient(90deg,#2563eb 0%,transparent 50%);border-radius:1px;margin:14px 0 24px}
+
+/* ── Question card (POP clarification form pattern) ──────────── */
+.q-card{background:#fff;border:1px solid #d6e2f0;border-radius:10px;
+        margin-bottom:16px;overflow:hidden;transition:box-shadow .15s}
+.q-card:focus-within{box-shadow:0 0 0 2px rgba(37,99,235,.15)}
+
+.q-head{padding:14px 18px 11px;border-bottom:1px solid #eef3fa;
+        display:flex;gap:12px;align-items:flex-start}
+.q-num{font-family:'DM Mono',monospace;font-size:11px;font-weight:600;color:#94a3b8;
+       background:#f5f8fc;border-radius:4px;padding:2px 7px;flex-shrink:0;margin-top:2px}
+.q-text{font-size:13.5px;font-weight:600;color:#0f172a;line-height:1.5;flex:1}
+.q-context{font-size:12px;color:#5b6b82;margin-top:4px;line-height:1.5}
+
+.q-tag{flex-shrink:0;padding:2px 9px;border-radius:10px;font-size:10px;font-weight:700;margin-top:2px}
+.tag-blocker{background:#fee2e2;color:#dc2626}
+.tag-required{background:#fef3c7;color:#92400e}
+.tag-tbc{background:#dbeafe;color:#1d4ed8}
+.tag-jb{background:#f3e8ff;color:#6b21a8}
+.tag-arch{background:#ecfdf5;color:#065f46}
+
+.q-body{padding:14px 18px 16px}
+
+/* Callout boxes */
+.callout{display:flex;gap:10px;padding:11px 14px;border-radius:7px;margin-bottom:14px;
+         font-size:12.5px;line-height:1.55}
+.callout-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+.callout-blue{background:#eaf0fb;border-left:3px solid #1d4ed8;color:#1e3a5f}
+.callout-amber{background:#fffbec;border-left:3px solid #f59e0b;color:#78350f}
+.callout-red{background:#fef2f2;border-left:3px solid #dc2626;color:#7f1d1d}
+.callout-green{background:#ecfdf5;border-left:3px solid #22c55e;color:#064e3b}
+
+/* Options (radio-style) */
+.q-options{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
+.q-opt{display:flex;align-items:flex-start;gap:10px;padding:10px 13px;border-radius:7px;
+       border:1.5px solid #d6e2f0;cursor:pointer;transition:all .12s;background:#fafcfe}
+.q-opt:hover{border-color:#93c5fd;background:#eaf2ff}
+.q-opt.selected{border-color:#22c55e;background:#f0fdf4}
+.q-opt-dot{width:17px;height:17px;border-radius:50%;border:2px solid #d6e2f0;flex-shrink:0;
+           margin-top:1px;transition:all .12s;position:relative}
+.q-opt.selected .q-opt-dot{border-color:#22c55e;background:#22c55e}
+.q-opt.selected .q-opt-dot::after{content:'';position:absolute;top:3px;left:3px;
+                                   width:7px;height:7px;border-radius:50%;background:#fff}
+.q-opt-label{font-size:13px;color:#1e293b;line-height:1.5;flex:1}
+.q-opt-sub{font-size:11px;color:#5b6b82;margin-top:3px}
+
+/* Checklist */
+.q-checks{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.q-check{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border-radius:6px;
+         border:1.5px solid #d6e2f0;cursor:pointer;transition:all .12s;background:#fff}
+.q-check:hover{border-color:#93c5fd}
+.q-check.ticked{border-color:#22c55e;background:#f0fdf4}
+.q-check-box{width:17px;height:17px;border-radius:4px;border:2px solid #d6e2f0;flex-shrink:0;
+             margin-top:1px;transition:all .12s;display:flex;align-items:center;justify-content:center;
+             font-size:10px;color:#fff}
+.q-check.ticked .q-check-box{border-color:#22c55e;background:#22c55e}
+.q-check-label{font-size:13px;color:#1e293b;line-height:1.5}
+.q-check-sub{font-size:11px;color:#5b6b82;margin-top:2px}
+
+/* Text fields */
+.field-label{font-size:11px;font-weight:600;color:#5b6b82;text-transform:uppercase;
+             letter-spacing:.05em;margin-bottom:6px;margin-top:12px}
+.q-textarea{width:100%;border:1.5px solid #d6e2f0;border-radius:7px;padding:10px 13px;
+            font-family:'DM Sans',sans-serif;font-size:13px;color:#0f172a;resize:vertical;
+            min-height:72px;outline:none;background:#fafcfe;transition:border-color .12s}
+.q-textarea:focus{border-color:#2563eb;background:#fff}
+.q-textarea::placeholder{color:#a0aec0}
+.q-input{width:100%;border:1.5px solid #d6e2f0;border-radius:7px;padding:9px 13px;
+         font-family:'DM Sans',sans-serif;font-size:13px;color:#0f172a;outline:none;
+         background:#fafcfe;transition:border-color .12s}
+.q-input:focus{border-color:#2563eb;background:#fff}
+
+/* View-only */
+.view-only .q-opt,.view-only .q-check{pointer-events:none;opacity:.8}
+.view-only .q-textarea,.view-only .q-input{pointer-events:none;opacity:.85;background:#f5f8fc}
+
+/* Status footer */
+.q-status{display:flex;align-items:center;gap:6px;padding:8px 18px;font-size:11px;font-weight:600;
+          border-top:1px solid #eef3fa;color:#94a3b8}
+.q-stat-dot{width:6px;height:6px;border-radius:50%;background:#d6e2f0;flex-shrink:0}
+.q-status.answered{color:#22c55e}
+.q-status.answered .q-stat-dot{background:#22c55e}
+.q-status.partial{color:#f59e0b}
+.q-status.partial .q-stat-dot{background:#f59e0b}
+.q-save-ind{margin-left:auto;font-size:10px;opacity:0;transition:opacity .3s}
+.q-save-ind.show{opacity:1}
+
+/* Nav buttons */
+.nav-btns{display:flex;gap:10px;margin-top:32px;padding-top:18px;border-top:1px solid #d6e2f0}
+.btn{padding:8px 18px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;
+     border:none;transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+.btn-primary{background:#0c1525;color:#fff}
+.btn-primary:hover{background:#1e293b}
+.btn-secondary{background:#fff;color:#0c1525;border:1.5px solid #d6e2f0}
+.btn-secondary:hover{border-color:#93c5fd}
+.btn-export{background:#2563eb;color:#fff;margin-left:auto}
+.btn-export:hover{background:#1d4ed8}
+
+/* ── Summary section ─────────────────────────────────────────── */
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
+.summary-stat{background:#fff;border:1px solid #d6e2f0;border-radius:10px;padding:16px 18px}
+.summary-stat .num{font-size:28px;font-weight:700;font-family:'DM Mono',monospace}
+.summary-stat .lbl{font-size:11px;color:#5b6b82;margin-top:2px}
+.summary-stat.green .num{color:#22c55e}
+.summary-stat.amber .num{color:#f59e0b}
+.summary-stat.red .num{color:#dc2626}
+.summary-stat.blue .num{color:#2563eb}
+
+.summary-row{background:#fff;border:1px solid #d6e2f0;border-radius:8px;padding:10px 14px;
+             margin-bottom:6px;display:flex;align-items:flex-start;gap:10px;cursor:pointer;
+             transition:border-color .12s}
+.summary-row:hover{border-color:#93c5fd}
+.sr-code{font-family:'DM Mono',monospace;font-size:11px;color:#94a3b8;min-width:32px}
+.sr-text{font-size:12px;color:#1e293b;flex:1}
+.sr-status{font-size:10px;font-weight:700;white-space:nowrap;padding-top:2px}
+
+/* ── Right rail (room info) ──────────────────────────────────── */
+.room-info{width:260px;flex-shrink:0;border-left:1px solid #e2e8f0;overflow-y:auto;background:#fff}
+.ri-card{border-bottom:1px solid #f1f5f9;padding:16px 18px}
+.ri-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:10px}
+.ri-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px}
+.ri-label{color:#5b6b82}
+.ri-val{color:#0f172a;font-weight:500}
+.ri-status-sel{width:100%;padding:6px 10px;border:1.5px solid #d6e2f0;border-radius:6px;
+               font-size:11px;font-weight:600;background:#fff;outline:none;cursor:pointer}
+.ri-status-sel:focus{border-color:#2563eb}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:#0c1525;color:#f1f5f9;padding:10px 18px;
+       border-radius:8px;font-size:12px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.3);
+       transform:translateY(80px);opacity:0;transition:all .3s;z-index:999}
+.toast.show{transform:translateY(0);opacity:1}
+
+@media(max-width:1100px){.room-info{display:none}}
+@media(max-width:800px){.room-nav{display:none}}
+</style>
+{% endblock %}
+
+{% block sidebar %}
+  {% set active_nav = 'meeting_rooms' %}
+  {% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-title" style="min-width:0;flex:1">
+  <h1 style="font-size:15px"><a href="/studio/rooms" style="color:#64748b;text-decoration:none">← Meeting Rooms</a></h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex;flex-direction:column;height:calc(100vh - 65px);overflow:hidden" class="{% if not is_admin %}view-only{% endif %}">
+
+<!-- ══════ ROOM BANNER ══════ -->
+<div class="room-banner">
+  <div class="rb-row">
+    <div>
+      <div class="rb-brand">Devex AI Studios</div>
+      <div class="rb-title">{{ room.title }}</div>
+      <div class="rb-sub">
+        <span>{{ room.subtitle or 'Client Meet Room' }}</span>
+        {% if room.client_name %}<span>{{ room.client_name }}</span>{% endif %}
+      </div>
+    </div>
+    <div class="rb-meta">
+      {% if is_admin %}
+      <span class="rb-badge badge-admin">Admin Editing</span>
+      {% else %}
+      <span class="rb-badge badge-client">Client View Only</span>
+      {% endif %}
+      <span class="rb-badge badge-status badge-{{ room.status }}">{{ status_labels.get(room.status, room.status) }}</span>
+    </div>
+    <div class="rb-progress">
+      <div class="rb-prog-bar">
+        <div class="rb-prog-fill" id="progFill" style="width:{{ pct }}%"></div>
+      </div>
+      <span class="rb-prog-label" id="progLabel">{{ answered_q }} / {{ total_q }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ BODY ══════ -->
+<div class="room-body">
+
+  <!-- ── Left nav ──────────────────────────────────────────────── -->
+  <nav class="room-nav" id="roomNav">
+    {% set first_sec_id = sections[0].id if sections else 0 %}
+    {% for g in groups %}
+    <div class="rn-group">{{ g.name }}</div>
+    {% for sec in g.sections %}
+    <div class="rn-item {% if sec.id == first_sec_id %}active{% endif %}"
+         id="rnav-{{ sec.id }}" onclick="goToSec({{ sec.id }})" data-sec-id="{{ sec.id }}">
+      <div class="rn-dot {% if completion[sec.id].status == 'complete' %}complete{% elif completion[sec.id].status == 'partial' %}partial{% endif %}"
+           id="rdot-{{ sec.id }}"></div>
+      <span>{{ sec.title }}</span>
+    </div>
+    {% endfor %}
+    {% endfor %}
+    <div class="rn-group" style="margin-top:6px">Review</div>
+    <div class="rn-item rn-item-summary" id="rnav-summary" onclick="goToSec('summary')">
+      <div class="rn-dot" id="rdot-summary"></div>
+      <span>Summary & Export</span>
+    </div>
+  </nav>
+
+  <!-- ── Central canvas ───────────────────────────────────────── -->
+  <main class="room-canvas" id="roomCanvas">
+
+    {% for sec in sections %}
+    <div class="room-section {% if loop.first %}active{% endif %}"
+         id="rsec-{{ sec.id }}" data-sec-id="{{ sec.id }}">
+
+      <div class="rs-eyebrow">Section {{ '%02d'|format(loop.index) }} — {{ sec.group_name }}</div>
+      <div class="rs-title">{{ sec.title }}</div>
+      {% if sec.description %}<div class="rs-desc">{{ sec.description }}</div>{% endif %}
+      <div class="rs-rule"></div>
+
+      {% set qs = q_by_section.get(sec.id, []) %}
+      {% for q in qs %}
+      {% set ans = answers.get(q.id, {}) %}
+      {% set ans_status = ans.get('status', 'empty') %}
+
+      <div class="q-card" id="qc-{{ q.id }}" data-qid="{{ q.id }}" data-sec-id="{{ sec.id }}">
+        <div class="q-head">
+          <div class="q-num">{{ q.code or loop.index }}</div>
+          <div style="flex:1">
+            <div class="q-text">{{ q.label }}</div>
+            {% if q.context %}<div class="q-context">{{ q.context }}</div>{% endif %}
+          </div>
+          {% if q.tag_text %}<div class="q-tag {{ q.tag_class }}">{{ q.tag_text }}</div>{% endif %}
+        </div>
+
+        <div class="q-body">
+          {# Callout #}
+          {% if q.callout_text %}
+          <div class="callout callout-{{ q.callout_type or 'blue' }}">
+            <div class="callout-icon">{% if q.callout_type == 'red' or q.callout_type == 'amber' %}⚠{% elif q.callout_type == 'green' %}✓{% else %}ℹ{% endif %}</div>
+            <div>{{ q.callout_text }}</div>
+          </div>
+          {% endif %}
+
+          {# ── OPTIONS ── #}
+          {% if q.field_type == 'options' %}
+          <div class="q-options" data-qid="{{ q.id }}">
+            {% for opt in q.options %}
+            {% set opt_label = opt.label if opt is mapping else opt %}
+            {% set opt_sub = opt.sub if opt is mapping else '' %}
+            <div class="q-opt {% if ans.get('selected_option') == opt_label %}selected{% endif %}"
+                 onclick="selectOption(this, {{ q.id }})">
+              <div class="q-opt-dot"></div>
+              <div>
+                <div class="q-opt-label">{{ opt_label }}</div>
+                {% if opt_sub %}<div class="q-opt-sub">{{ opt_sub }}</div>{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+
+          {# ── CHECKLIST ── #}
+          {% elif q.field_type == 'checklist' %}
+          <div class="q-checks" data-qid="{{ q.id }}">
+            {% for opt in q.options %}
+            {% set opt_label = opt.label if opt is mapping else opt %}
+            {% set opt_sub = opt.sub if opt is mapping else '' %}
+            {% set is_checked = opt_label in (ans.get('checked') or []) %}
+            <div class="q-check {% if is_checked %}ticked{% endif %}"
+                 onclick="toggleCheck(this, {{ q.id }})" data-label="{{ opt_label }}">
+              <div class="q-check-box">{% if is_checked %}✓{% endif %}</div>
+              <div>
+                <div class="q-check-label">{{ opt_label }}</div>
+                {% if opt_sub %}<div class="q-check-sub">{{ opt_sub }}</div>{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+
+          {# ── TEXTAREA ── #}
+          {% elif q.field_type == 'textarea' %}
+          <textarea class="q-textarea" data-qid="{{ q.id }}" data-field="main"
+                    placeholder="Enter your answer..."
+                    {% if not is_admin %}disabled{% endif %}
+                    >{{ (ans.get('notes') or {}).get('main', '') }}</textarea>
+
+          {# ── TEXT ── #}
+          {% elif q.field_type == 'text' %}
+          <input class="q-input" type="text" data-qid="{{ q.id }}" data-field="main"
+                 value="{{ (ans.get('notes') or {}).get('main', '') }}"
+                 placeholder="Enter your answer..."
+                 {% if not is_admin %}disabled{% endif %}>
+
+          {# ── DATE ── #}
+          {% elif q.field_type == 'date' %}
+          <input class="q-input" type="date" data-qid="{{ q.id }}" data-field="main"
+                 value="{{ (ans.get('notes') or {}).get('main', '') }}"
+                 {% if not is_admin %}disabled{% endif %}>
+          {% endif %}
+
+          {# Notes field (always present for option/checklist types) #}
+          {% if q.field_type in ('options', 'checklist') %}
+          <div class="field-label">Notes</div>
+          <textarea class="q-textarea" data-qid="{{ q.id }}" data-field="notes"
+                    placeholder="Record any notes, conditions, or decisions..."
+                    style="min-height:56px"
+                    {% if not is_admin %}disabled{% endif %}
+                    >{{ (ans.get('notes') or {}).get('notes', '') }}</textarea>
+          {% endif %}
+        </div>
+
+        <div class="q-status {% if ans_status == 'answered' %}answered{% elif ans_status == 'partial' %}partial{% endif %}"
+             id="qst-{{ q.id }}">
+          <div class="q-stat-dot"></div>
+          <span id="qst-label-{{ q.id }}">
+            {% if ans_status == 'answered' %}Answered{% elif ans_status == 'partial' %}Partially answered{% else %}Not answered{% endif %}
+          </span>
+          <span class="q-save-ind" id="qsave-{{ q.id }}">Saved</span>
+        </div>
+      </div>
+      {% endfor %}{# end questions #}
+
+      {# Nav buttons #}
+      <div class="nav-btns">
+        {% if not loop.first %}
+        <button class="btn btn-secondary" onclick="goToSec({{ sections[loop.index-2].id }})">← Previous</button>
+        {% endif %}
+        {% if not loop.last %}
+        <button class="btn btn-primary" onclick="goToSec({{ sections[loop.index].id }})">Next →</button>
+        {% else %}
+        <button class="btn btn-primary" onclick="goToSec('summary')">Summary →</button>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+
+    <!-- ── SUMMARY SECTION ─────────────────────────────────────── -->
+    <div class="room-section" id="rsec-summary">
+      <div class="rs-eyebrow">Review</div>
+      <div class="rs-title">Summary & Export</div>
+      <div class="rs-desc">Overview of all questions and their current status.</div>
+      <div class="rs-rule"></div>
+
+      <div class="summary-grid" id="summaryStats"></div>
+      <div id="summaryList"></div>
+
+      <div class="nav-btns">
+        {% if sections %}
+        <button class="btn btn-secondary" onclick="goToSec({{ sections[0].id }})">← Back to start</button>
+        {% endif %}
+        <button class="btn btn-export" onclick="exportRoom()">Export answers</button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── Right rail ───────────────────────────────────────────── -->
+  <aside class="room-info">
+    <div class="ri-card">
+      <div class="ri-title">Room Info</div>
+      {% if is_admin %}
+      <div class="ri-row">
+        <span class="ri-label">Status</span>
+        <select class="ri-status-sel" id="statusSel" onchange="updateRoomStatus(this.value)">
+          {% for val, label in status_labels.items() %}
+          <option value="{{ val }}" {% if val == room.status %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% else %}
+      <div class="ri-row"><span class="ri-label">Status</span><span class="ri-val">{{ status_labels.get(room.status, room.status) }}</span></div>
+      {% endif %}
+      {% if room.client_name %}
+      <div class="ri-row"><span class="ri-label">Client</span><span class="ri-val">{{ room.client_name }}</span></div>
+      {% endif %}
+      {% if room.project_type %}
+      <div class="ri-row"><span class="ri-label">Type</span><span class="ri-val">{{ room.project_type }}</span></div>
+      {% endif %}
+      <div class="ri-row"><span class="ri-label">Sections</span><span class="ri-val">{{ sections|length }}</span></div>
+      <div class="ri-row"><span class="ri-label">Questions</span><span class="ri-val" id="riTotal">{{ total_q }}</span></div>
+      <div class="ri-row"><span class="ri-label">Answered</span><span class="ri-val" id="riAnswered">{{ answered_q }}</span></div>
+    </div>
+
+    <div class="ri-card">
+      <div class="ri-title">Progress</div>
+      {% for sec in sections %}
+      {% set sc = completion.get(sec.id, {}) %}
+      <div class="ri-row">
+        <span class="ri-label" style="font-size:11px">{{ sec.title[:22] }}{% if sec.title|length > 22 %}...{% endif %}</span>
+        <span class="ri-val" style="font-size:11px;
+          {% if sc.status == 'complete' %}color:#22c55e{% elif sc.status == 'partial' %}color:#f59e0b{% else %}color:#94a3b8{% endif %}">
+          {{ sc.get('answered',0) }}/{{ sc.get('total',0) }}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+  </aside>
+
+</div>{# end room-body #}
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const ROOM_ID = {{ room.id }};
+const SECTIONS_DATA = {{ sections | tojson }};
+const QUESTIONS_DATA = {{ questions | tojson }};
+let totalQ = {{ total_q }};
+let answeredQ = {{ answered_q }};
+
+// ── Navigation ──────────────────────────────────────────────────
+function goToSec(secId) {
+  document.querySelectorAll('.room-section').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.rn-item').forEach(el => el.classList.remove('active'));
+  const sec = document.getElementById('rsec-' + secId);
+  const nav = document.getElementById('rnav-' + secId);
+  if (sec) sec.classList.add('active');
+  if (nav) nav.classList.add('active');
+  document.getElementById('roomCanvas').scrollTop = 0;
+  if (secId === 'summary') buildSummary();
+}
+
+// ── Options selection ───────────────────────────────────────────
+function selectOption(el, qid) {
+  const container = el.closest('.q-options');
+  container.querySelectorAll('.q-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  const label = el.querySelector('.q-opt-label').textContent.trim();
+  saveRoomAnswer(qid, {selected_option: label});
+}
+
+// ── Checklist toggle ────────────────────────────────────────────
+function toggleCheck(el, qid) {
+  el.classList.toggle('ticked');
+  el.querySelector('.q-check-box').textContent = el.classList.contains('ticked') ? '✓' : '';
+  const container = el.closest('.q-checks');
+  const checked = [];
+  container.querySelectorAll('.q-check.ticked').forEach(c => {
+    checked.push(c.dataset.label);
+  });
+  saveRoomAnswer(qid, {checked: checked});
+}
+
+// ── Text/textarea autosave ──────────────────────────────────────
+let timers = {};
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.q-textarea[data-qid], .q-input[data-qid]').forEach(el => {
+    el.addEventListener('input', function() {
+      const qid = el.dataset.qid;
+      const field = el.dataset.field || 'main';
+      if (timers[qid + field]) clearTimeout(timers[qid + field]);
+      timers[qid + field] = setTimeout(() => {
+        // Gather all note fields for this question
+        const card = document.getElementById('qc-' + qid);
+        const notes = {};
+        if (card) {
+          card.querySelectorAll('.q-textarea[data-field], .q-input[data-field]').forEach(f => {
+            notes[f.dataset.field] = f.value;
+          });
+        }
+        saveRoomAnswer(qid, {notes: notes});
+      }, 800);
+    });
+  });
+});
+
+// ── Save answer ─────────────────────────────────────────────────
+function saveRoomAnswer(qid, data) {
+  const body = Object.assign({question_id: parseInt(qid)}, data);
+  // Preserve existing answer parts
+  const card = document.getElementById('qc-' + qid);
+  if (card && !data.selected_option) {
+    const sel = card.querySelector('.q-opt.selected .q-opt-label');
+    if (sel) body.selected_option = sel.textContent.trim();
+  }
+  if (card && !data.checked) {
+    const checked = [];
+    card.querySelectorAll('.q-check.ticked').forEach(c => checked.push(c.dataset.label));
+    if (checked.length) body.checked = checked;
+  }
+  if (card && !data.notes) {
+    const notes = {};
+    card.querySelectorAll('.q-textarea[data-field], .q-input[data-field]').forEach(f => {
+      notes[f.dataset.field] = f.value;
+    });
+    body.notes = notes;
+  }
+
+  fetch(`/studio/rooms/${ROOM_ID}/save`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body),
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.ok) {
+      // Flash save indicator
+      const ind = document.getElementById('qsave-' + qid);
+      if (ind) { ind.classList.add('show'); setTimeout(() => ind.classList.remove('show'), 2000); }
+
+      // Update question status
+      const hasOpt = body.selected_option;
+      const hasCheck = body.checked && body.checked.length;
+      const hasNotes = body.notes && Object.values(body.notes).some(v => v && v.trim());
+      let st = 'empty';
+      if (hasOpt || hasCheck) st = 'answered';
+      else if (hasNotes) st = 'partial';
+      updateQStatus(qid, st);
+
+      // Update section dot
+      if (d.section_status) {
+        const secId = card ? card.dataset.secId : null;
+        if (secId) {
+          const dot = document.getElementById('rdot-' + secId);
+          if (dot) { dot.className = 'rn-dot'; if (d.section_status !== 'empty') dot.classList.add(d.section_status); }
+        }
+      }
+
+      // Update progress
+      totalQ = d.total_q;
+      answeredQ = d.answered_q;
+      updateProgress();
+    }
+  })
+  .catch(e => console.error('Save error:', e));
+}
+
+function updateQStatus(qid, status) {
+  const el = document.getElementById('qst-' + qid);
+  const label = document.getElementById('qst-label-' + qid);
+  if (el) { el.className = 'q-status'; if (status !== 'empty') el.classList.add(status); }
+  if (label) {
+    if (status === 'answered') label.textContent = 'Answered';
+    else if (status === 'partial') label.textContent = 'Partially answered';
+    else label.textContent = 'Not answered';
+  }
+}
+
+function updateProgress() {
+  const pct = totalQ > 0 ? Math.round((answeredQ / totalQ) * 100) : 0;
+  const fill = document.getElementById('progFill');
+  const lbl = document.getElementById('progLabel');
+  const riAns = document.getElementById('riAnswered');
+  if (fill) fill.style.width = pct + '%';
+  if (lbl) lbl.textContent = answeredQ + ' / ' + totalQ;
+  if (riAns) riAns.textContent = answeredQ;
+}
+
+// ── Room status ─────────────────────────────────────────────────
+function updateRoomStatus(status) {
+  fetch(`/studio/rooms/${ROOM_ID}/status`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({status}),
+  }).then(r => r.json()).then(d => { if (d.ok) showToast('Status updated'); });
+}
+
+// ── Summary ─────────────────────────────────────────────────────
+function buildSummary() {
+  let answered = 0, partial = 0, empty = 0;
+  const rows = [];
+  QUESTIONS_DATA.forEach(q => {
+    const card = document.getElementById('qc-' + q.id);
+    const stEl = document.getElementById('qst-' + q.id);
+    let st = 'empty';
+    if (stEl && stEl.classList.contains('answered')) { st = 'answered'; answered++; }
+    else if (stEl && stEl.classList.contains('partial')) { st = 'partial'; partial++; }
+    else { empty++; }
+    const color = st === 'answered' ? '#22c55e' : st === 'partial' ? '#f59e0b' : '#dc2626';
+    const stText = st === 'answered' ? 'Answered' : st === 'partial' ? 'Partial' : 'Not answered';
+    const secId = card ? card.dataset.secId : '';
+    rows.push(`<div class="summary-row" onclick="goToSec(${secId || "'summary'"})">
+      <div class="sr-code">${q.code || ''}</div>
+      <div class="sr-text">${(q.label || '').substring(0, 80)}</div>
+      <div class="sr-status" style="color:${color}">${stText}</div>
+    </div>`);
+  });
+
+  document.getElementById('summaryStats').innerHTML = `
+    <div class="summary-stat green"><div class="num">${answered}</div><div class="lbl">Answered</div></div>
+    <div class="summary-stat amber"><div class="num">${partial}</div><div class="lbl">Partial</div></div>
+    <div class="summary-stat red"><div class="num">${empty}</div><div class="lbl">Not answered</div></div>
+    <div class="summary-stat blue"><div class="num">${Math.round((answered/Math.max(totalQ,1))*100)}%</div><div class="lbl">Complete</div></div>
+  `;
+  document.getElementById('summaryList').innerHTML = rows.join('');
+}
+
+// ── Export ───────────────────────────────────────────────────────
+function exportRoom() {
+  let out = '{{ room.title }}\nMeeting Room Export\n' + new Date().toLocaleDateString('en-GB') + '\n\n';
+  QUESTIONS_DATA.forEach(q => {
+    out += `[${q.code || '?'}] ${q.label}\n`;
+    const card = document.getElementById('qc-' + q.id);
+    if (card) {
+      const sel = card.querySelector('.q-opt.selected .q-opt-label');
+      if (sel) out += 'Selected: ' + sel.textContent.trim() + '\n';
+      const ticked = card.querySelectorAll('.q-check.ticked .q-check-label');
+      if (ticked.length) { out += 'Checked:\n'; ticked.forEach(t => out += '  - ' + t.textContent.trim() + '\n'); }
+      card.querySelectorAll('.q-textarea[data-field], .q-input[data-field]').forEach(f => {
+        if (f.value.trim()) out += (f.dataset.field === 'notes' ? 'Notes' : 'Answer') + ': ' + f.value.trim() + '\n';
+      });
+    }
+    out += '\n';
+  });
+  const blob = new Blob([out], {type: 'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '{{ room.title|replace(" ","_") }}_export.txt';
+  a.click();
+}
+
+// ── Toast ───────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign In — Devex AI Studios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dx.css') }}">
+</head>
+<body>
+<div class="dx-login-shell">
+    <div class="dx-login-card">
+        <div class="dx-login-logo">
+            <div class="mark">DX</div>
+            <div>
+                <div class="name">Devex AI Studios</div>
+                <div class="sub">Studio Platform</div>
+            </div>
+        </div>
+
+        <div class="dx-login-title">Sign in</div>
+        <div class="dx-login-sub">
+            {% if login_type == 'client' %}
+                Enter your project access code to view your quote and project status.
+            {% else %}
+                Studio admin access. Enter your credentials to continue.
+            {% endif %}
+        </div>
+
+        {% if error %}
+        <div class="dx-login-error">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('dx_login_post') }}">
+            <input type="hidden" name="login_type" value="{{ login_type or 'admin' }}">
+            <input type="hidden" name="next" value="{{ next or '' }}">
+
+            {% if login_type == 'client' %}
+            <div class="dx-form-group">
+                <label class="dx-form-label" for="project_ref">Project Reference</label>
+                <input class="dx-form-input" type="text" id="project_ref" name="project_ref"
+                       placeholder="REQ-DDMMYY-XXXXX" autocomplete="off"
+                       value="{{ form_ref or '' }}" required>
+            </div>
+            <div class="dx-form-group">
+                <label class="dx-form-label" for="access_code">Access Code</label>
+                <input class="dx-form-input" type="password" id="access_code" name="password"
+                       placeholder="Your access code" autocomplete="current-password" required>
+            </div>
+            {% else %}
+            <div class="dx-form-group">
+                <label class="dx-form-label" for="username">Username</label>
+                <input class="dx-form-input" type="text" id="username" name="username"
+                       placeholder="admin" autocomplete="username"
+                       value="{{ form_username or '' }}" required>
+            </div>
+            <div class="dx-form-group">
+                <label class="dx-form-label" for="password">Password</label>
+                <input class="dx-form-input" type="password" id="password" name="password"
+                       placeholder="Password" autocomplete="current-password" required>
+            </div>
+            {% endif %}
+
+            <button type="submit" class="dx-login-submit">
+                {% if login_type == 'client' %}View My Project{% else %}Sign In{% endif %}
+            </button>
+        </form>
+
+        <div class="dx-login-footer">
+            {% if login_type == 'client' %}
+                <a href="{{ url_for('dx_login') }}">Admin sign-in</a>
+                &nbsp;&middot;&nbsp;
+                <a href="{{ url_for('dx_public_landing') }}">Back to website</a>
+            {% else %}
+                <a href="{{ url_for('dx_login') }}?type=client">Client access</a>
+                &nbsp;&middot;&nbsp;
+                <a href="{{ url_for('dx_public_landing') }}">Back to website</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+</body>
+</html>

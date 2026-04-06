@@ -1,0 +1,85 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}{{ page_title }} - Facilities Management{% endblock %}
+
+{% block sidebar %}
+    {% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-title">
+    <h1>{{ page_title }}</h1>
+    <p>Enter client information</p>
+</div>
+<div class="topbar-actions">
+    <a href="/databases/clients" class="btn btn-secondary">Cancel</a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <form method="POST" class="form-card">
+        <div class="form-group">
+            <label for="name">Name *</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="organisation">Organisation</label>
+            <input type="text" id="organisation" name="organisation">
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email">
+            </div>
+            <div class="form-group">
+                <label for="phone">Phone</label>
+                <input type="tel" id="phone" name="phone">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="address">Address</label>
+            <textarea id="address" name="address" rows="3"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="notes">Notes</label>
+            <textarea id="notes" name="notes" rows="4"></textarea>
+        </div>
+        
+        <div class="form-actions">
+            <a href="/databases/clients" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Add Client</button>
+        </div>
+    </form>
+</div>
+
+<style>
+.form-card {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+</style>
+{% endblock %}
