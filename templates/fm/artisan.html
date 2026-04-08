@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>{{ ticket.ref }} — FM Job Card</title>
+<style>
+/* =========================================================
+   FM Artisan Mobile Job Card
+   Batch FM4 | No sidebar, no framework chrome
+   Pure mobile-optimised light theme
+   ========================================================= */
+:root {
+    --bg:     #f6f8fb;
+    --panel:  #ffffff;
+    --line:   #d9e1ec;
+    --text:   #0f172a;
+    --muted:  #475569;
+    --muted2: #64748b;
+    --accent: #2563eb;
+    --good:   #16a34a;
+    --warn:   #d97706;
+    --bad:    #dc2626;
+    --radius: 12px;
+    --mono:   ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans:   ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    padding: 0 0 80px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Header */
+.art-header {
+    background: var(--accent);
+    color: #fff;
+    padding: 20px 16px 16px;
+}
+.art-header .art-brand { font-size: 12px; opacity: .75; margin-bottom: 8px; }
+.art-header h1 {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+.art-header .art-summary {
+    font-size: 14px; opacity: .9; line-height: 1.4;
+}
+
+/* Status bar */
+.art-statusbar {
+    background: #fff;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Badge */
+.art-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--muted);
+}
+.art-badge.bad   { border-color: #fecaca; background: #fef2f2; color: #991b1b; }
+.art-badge.warn  { border-color: #fed7aa; background: #fff7ed; color: #9a3412; }
+.art-badge.good  { border-color: #86efac; background: #f0fdf4; color: #166534; }
+.art-badge.info  { border-color: #bfdbfe; background: #eff6ff; color: #1d4ed8; }
+
+/* Sections */
+.art-section {
+    background: #fff;
+    border-bottom: 1px solid var(--line);
+    padding: 14px 16px;
+}
+.art-section h2 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+}
+
+/* Meta grid */
+.art-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+.art-meta-item label {
+    display: block;
+    font-size: 11px;
+    color: var(--muted2);
+    margin-bottom: 3px;
+}
+.art-meta-item .val {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Conversation */
+.art-msg {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: #fff;
+    margin-bottom: 8px;
+}
+.art-msg.customer { border-color: #bfdbfe; background: #eff6ff; }
+.art-msg.ai       { border-color: #d8b4fe; background: #faf5ff; }
+.art-mmeta { font-size: 11px; color: var(--muted2); font-family: var(--mono); margin-bottom: 5px; }
+.art-mbody { font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
+
+/* Photos */
+.art-thumbs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+}
+.art-thumb {
+    height: 72px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: linear-gradient(180deg, #f8fafc, #eef2f7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted2);
+    font-size: 11px;
+    text-decoration: none;
+    cursor: pointer;
+}
+.art-thumb.add {
+    border-style: dashed;
+    border-color: var(--accent);
+    color: var(--accent);
+    font-size: 18px;
+}
+
+/* Quick update form */
+.art-form { padding: 14px 16px; background: #fff; border-bottom: 1px solid var(--line); }
+.art-label { font-size: 12px; color: var(--muted2); margin-bottom: 5px; display: block; }
+.art-input, .art-select {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+    background: #fff;
+    color: var(--text);
+    font-family: var(--sans);
+    outline: none;
+    margin-bottom: 10px;
+}
+.art-input:focus, .art-select:focus { border-color: #93c5fd; }
+.art-textarea { min-height: 80px; resize: vertical; }
+.art-btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--sans);
+    margin-bottom: 8px;
+    transition: opacity .15s;
+}
+.art-btn:active { opacity: .8; }
+.art-btn.primary { background: var(--accent); color: #fff; }
+.art-btn.success { background: #16a34a; color: #fff; }
+.art-btn.secondary { background: #fff; border: 1px solid var(--line); color: var(--text); }
+
+/* Sticky bottom bar */
+.art-sticky {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-width: 600px;
+    margin: 0 auto;
+    background: #fff;
+    border-top: 1px solid var(--line);
+    padding: 12px 16px;
+    display: flex;
+    gap: 8px;
+}
+.art-sticky .art-btn { margin: 0; flex: 1; }
+
+/* Toast */
+.art-toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0f172a;
+    color: #fff;
+    border-radius: 10px;
+    padding: 11px 18px;
+    font-size: 13px;
+    display: none;
+    z-index: 999;
+    white-space: nowrap;
+}
+.art-toast.show   { display: block; animation: artfadein .15s ease; }
+.art-toast.success { background: #166534; }
+.art-toast.error  { background: #991b1b; }
+@keyframes artfadein { from { opacity: 0; transform: translateX(-50%) translateY(8px); } to { opacity: 1; transform: translateX(-50%); } }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="art-header">
+    <div class="art-brand">FM Operations · Artisan Job Card</div>
+    <h1>{{ ticket.ref }}</h1>
+    <div class="art-summary">{{ ticket.summary }}</div>
+</div>
+
+<!-- Status bar -->
+<div class="art-statusbar">
+    <span class="art-badge
+        {%- if ticket.status == 'DONE' %} good
+        {%- elif ticket.status in ('BLOCKED','CANCELLED') %} bad
+        {%- else %} warn
+        {%- endif %}">{{ ticket.status }}</span>
+    <span class="art-badge
+        {%- if ticket.priority == 'urgent' %} bad
+        {%- elif ticket.priority == 'low' %} good
+        {%- else %} warn
+        {%- endif %}">{{ ticket.priority }}</span>
+    <span class="art-badge info">{{ ticket.category }}</span>
+</div>
+
+<!-- Job details -->
+<div class="art-section">
+    <h2>Job Details</h2>
+    <div class="art-meta">
+        <div class="art-meta-item">
+            <label>Estate</label>
+            <div class="val">{{ ticket.estate or '—' }}</div>
+        </div>
+        <div class="art-meta-item">
+            <label>Unit</label>
+            <div class="val">{{ ticket.unit or '—' }}</div>
+        </div>
+        <div class="art-meta-item">
+            <label>Customer</label>
+            <div class="val">{{ ticket.customer or '—' }}</div>
+        </div>
+        <div class="art-meta-item">
+            <label>Assignee</label>
+            <div class="val">{{ ticket.assignee or 'Unassigned' }}</div>
+        </div>
+        <div class="art-meta-item" style="grid-column:1/-1">
+            <label>Materials / Notes</label>
+            <div class="val" style="font-weight:400;color:var(--muted)">{{ ticket.materials or 'None specified' }}</div>
+        </div>
+        {% if ticket.location_note %}
+        <div class="art-meta-item" style="grid-column:1/-1">
+            <label>Location Note</label>
+            <div class="val" style="font-weight:400;color:var(--muted)">{{ ticket.location_note }}</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Conversation (customer-visible only) -->
+<div class="art-section">
+    <h2>Customer Conversation</h2>
+    {% if messages %}
+        {% for msg in messages %}
+        <div class="art-msg {% if msg.sender == 'customer' %}customer{% elif msg.sender == 'ai' %}ai{% endif %}">
+            <div class="art-mmeta">{{ msg.created_at[:16] }} UTC · {{ msg.sender }}</div>
+            <div class="art-mbody">{{ msg.body }}</div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div style="color:var(--muted2);font-size:13px">No messages yet</div>
+    {% endif %}
+</div>
+
+<!-- Evidence photos -->
+<div class="art-section">
+    <h2>Photos &amp; Evidence</h2>
+    <div class="art-thumbs">
+        {% for ev in evidence %}
+        <a class="art-thumb" href="{{ ev.url }}" target="_blank" title="{{ ev.original_filename }}">IMG</a>
+        {% endfor %}
+        <label class="art-thumb add" title="Upload photo">
+            +
+            <input type="file" accept="image/*" capture="environment"
+                   style="display:none" onchange="ART.uploadPhoto(this.files)" />
+        </label>
+    </div>
+    <div id="art-upload-status" style="font-size:12px;color:var(--muted2);margin-top:8px"></div>
+</div>
+
+<!-- Quick update form -->
+<div class="art-form">
+    <h2 style="font-size:13px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">
+        Update Job Status
+    </h2>
+
+    <label class="art-label">Status</label>
+    <select class="art-select" id="art-status">
+        {% for s in ['NEW','TRIAGED','ASSIGNED','IN_PROGRESS','WAITING_CUSTOMER','BLOCKED','DONE','CANCELLED'] %}
+        <option {% if ticket.status == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+    </select>
+
+    <label class="art-label">Work note / update for manager</label>
+    <textarea class="art-input art-textarea" id="art-note"
+              placeholder="Describe what you found, what you did, and any next steps…"></textarea>
+
+    <button class="art-btn primary" onclick="ART.submitUpdate()">Submit Update</button>
+    <button class="art-btn success" onclick="ART.markDone()">Mark Job Complete</button>
+</div>
+
+<!-- Sticky nav -->
+<div class="art-sticky">
+    <a href="/fm/ticket/{{ ticket.ref }}" class="art-btn secondary" style="text-decoration:none;text-align:center">
+        Full View
+    </a>
+    <a href="/fm/dashboard" class="art-btn secondary" style="text-decoration:none;text-align:center">
+        Dashboard
+    </a>
+</div>
+
+<!-- Toast -->
+<div class="art-toast" id="art-toast"></div>
+
+<script>
+const ART = (() => {
+    const REF = '{{ ticket.ref }}';
+
+    async function submitUpdate(status) {
+        const note   = document.getElementById('art-note').value.trim();
+        const newStatus = status || document.getElementById('art-status').value;
+
+        if (!note) { toast('Add a work note first', 'error'); return; }
+
+        // Save status
+        await _patch({ status: newStatus });
+
+        // Add internal note to thread
+        if (note) {
+            await fetch(`/fm/api/tickets/${REF}/messages`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ body: note, sender: 'staff', source: 'artisan', is_internal: true })
+            });
+        }
+
+        toast('Update saved', 'success');
+        document.getElementById('art-note').value = '';
+        setTimeout(() => location.reload(), 1000);
+    }
+
+    function markDone() {
+        document.getElementById('art-status').value = 'DONE';
+        submitUpdate('DONE');
+    }
+
+    async function _patch(payload) {
+        try {
+            const r = await fetch(`/fm/api/tickets/${REF}`, {
+                method: 'PATCH',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify(payload)
+            });
+            return r.ok;
+        } catch(e) { return false; }
+    }
+
+    async function uploadPhoto(files) {
+        if (!files || !files.length) return;
+        const status = document.getElementById('art-upload-status');
+
+        for (const file of files) {
+            if (status) status.textContent = `Uploading ${file.name}…`;
+            const fd = new FormData();
+            fd.append('file', file);
+            fd.append('ref', REF);
+            try {
+                const r = await fetch('/fm/api/evidence', { method: 'POST', body: fd });
+                if (r.ok) {
+                    toast(`Uploaded ${file.name}`, 'success');
+                    if (status) status.textContent = `✓ ${file.name} uploaded`;
+                } else {
+                    toast('Upload failed', 'error');
+                }
+            } catch(e) {
+                toast('Upload error', 'error');
+            }
+        }
+    }
+
+    function toast(msg, type) {
+        const el = document.getElementById('art-toast');
+        el.textContent = msg;
+        el.className = `art-toast show ${type || ''}`;
+        clearTimeout(el._t);
+        el._t = setTimeout(() => el.classList.remove('show'), 3000);
+    }
+
+    return { submitUpdate, markDone, uploadPhoto, toast };
+})();
+</script>
+
+</body>
+</html>

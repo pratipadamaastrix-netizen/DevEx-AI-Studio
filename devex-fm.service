@@ -1,0 +1,35 @@
+# systemd service file for DevEx FM Platform
+# Install: sudo cp devex-fm.service /etc/systemd/system/devex-fm.service
+#          sudo systemctl daemon-reload
+#          sudo systemctl enable devex-fm
+#          sudo systemctl start devex-fm
+
+[Unit]
+Description=Devex AI Studios Platform v1.0.0
+After=network.target
+
+[Service]
+Type=simple
+
+# Change User/Group to the account running the app
+User=www-data
+Group=www-data
+
+# Change WorkingDirectory to where you deployed the app
+WorkingDirectory=/var/www/devex-ai
+
+# Load .env — keys are injected into the process environment before start
+EnvironmentFile=/var/www/devex-ai/.env
+
+ExecStart=/var/www/devex-ai/venv/bin/gunicorn -c gunicorn.conf.py wsgi:app
+
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=30
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

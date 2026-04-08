@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Error — Devex AI Studios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dx.css') }}">
+<style>
+body { font-family: 'DM Sans', sans-serif; background: #0D1117; min-height: 100vh;
+       display: flex; align-items: center; justify-content: center; }
+.box { text-align: center; padding: 40px; max-width: 400px; }
+.box h1 { font-size: 20px; font-weight: 700; color: #E6EDF3; margin-bottom: 10px; }
+.box p  { font-size: 14px; color: #8B949E; margin-bottom: 24px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="box">
+    <div style="font-size:36px;margin-bottom:20px;">⚠</div>
+    <h1>Project Not Found</h1>
+    <p>{{ message or 'We could not find your project. Please check your reference and try again.' }}</p>
+    <a href="{{ url_for('dx_login', type='client') }}" class="dx-btn dx-btn-primary">Try Again</a>
+    &nbsp;
+    <a href="{{ url_for('dx_public_contact') }}" class="dx-btn dx-btn-secondary">Contact Us</a>
+</div>
+</body>
+</html>

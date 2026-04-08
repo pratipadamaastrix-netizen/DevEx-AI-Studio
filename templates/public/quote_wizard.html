@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Requirements — Devex AI Studios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dx-wizard.css') }}">
+<style>/* legacy inline styles kept for any overrides — main styles in dx-wizard.css */
+:root {
+  --ink:     #0d1117;
+  --blue:    #2563eb;
+  --blue-lt: #dbeafe;
+  --silver:  #f8fafc;
+  --border:  #e2e8f0;
+  --mid:     #64748b;
+  --green:   #16a34a;
+  --amber:   #d97706;
+  --red:     #dc2626;
+  --white:   #ffffff;
+  --radius:  10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--silver);color:var(--ink);min-height:100vh}
+
+/* ── Layout ── */
+.shell{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+.left-rail{background:var(--ink);color:#fff;padding:40px 32px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow:hidden}
+.main{padding:48px 56px;max-width:780px}
+
+/* ── Brand ── */
+.brand{font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;margin-bottom:40px}
+.brand span{color:#fff}
+.tagline{font-size:22px;font-weight:600;line-height:1.35;margin-bottom:32px;color:#f1f5f9}
+
+/* ── Step nav ── */
+.step-nav{flex:1}
+.step-item{display:flex;align-items:flex-start;gap:14px;margin-bottom:6px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:background .2s}
+.step-item:hover{background:rgba(255,255,255,.06)}
+.step-item.active{background:rgba(37,99,235,.25)}
+.step-item.done .step-dot{background:var(--green);border-color:var(--green)}
+.step-item.done .step-dot::after{content:'✓';font-size:9px;color:#fff;line-height:1}
+.step-dot{width:22px;height:22px;border-radius:50%;border:2px solid #334155;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#64748b;flex-shrink:0;margin-top:2px;transition:all .3s}
+.step-item.active .step-dot{border-color:var(--blue);background:var(--blue);color:#fff}
+.step-meta{flex:1}
+.step-name{font-size:13px;font-weight:600;color:#94a3b8;transition:color .2s}
+.step-item.active .step-name{color:#fff}
+.step-item.done .step-name{color:#6ee7b7}
+.step-desc{font-size:11px;color:#475569;margin-top:2px}
+
+.progress-bar-wrap{margin-top:auto;padding-top:24px;border-top:1px solid #1e293b}
+.progress-label{font-size:11px;color:#64748b;display:flex;justify-content:space-between;margin-bottom:8px}
+.progress-track{height:3px;background:#1e293b;border-radius:2px}
+.progress-fill{height:3px;background:var(--blue);border-radius:2px;transition:width .4s ease}
+
+/* ── Step header ── */
+.step-header{margin-bottom:36px}
+.step-badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);background:var(--blue-lt);padding:4px 10px;border-radius:20px;margin-bottom:14px}
+.step-title{font-size:30px;font-weight:700;color:var(--ink);line-height:1.2;margin-bottom:8px}
+.step-subtitle{font-size:15px;color:var(--mid);line-height:1.5}
+
+/* ── Form elements ── */
+.field{margin-bottom:22px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:7px}
+.field label .req{color:var(--red);margin-left:2px}
+.field .hint{font-size:12px;color:var(--mid);margin-top:5px}
+input[type=text],input[type=email],input[type=tel],input[type=date],textarea,select{
+  width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius);
+  font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);background:#fff;
+  transition:border .2s,box-shadow .2s;outline:none
+}
+input:focus,textarea:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px #dbeafe}
+input.error,textarea.error,select.error{border-color:var(--red)}
+textarea{resize:vertical;min-height:90px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* ── Type cards ── */
+.type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.type-card{padding:16px 14px;border:1.5px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .2s;text-align:center;background:#fff}
+.type-card:hover{border-color:var(--blue);background:var(--blue-lt)}
+.type-card.selected{border-color:var(--blue);background:var(--blue-lt);box-shadow:0 0 0 3px #bfdbfe}
+.type-card .icon{font-size:24px;margin-bottom:8px}
+.type-card .label{font-size:12px;font-weight:600;color:var(--ink)}
+.type-card .desc{font-size:11px;color:var(--mid);margin-top:3px}
+
+/* ── Goal chips ── */
+.chip-group{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{padding:7px 14px;border:1.5px solid var(--border);border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;background:#fff;user-select:none}
+.chip:hover{border-color:var(--blue);color:var(--blue)}
+.chip.selected{border-color:var(--blue);background:var(--blue);color:#fff}
+
+/* ── Feature toggle list ── */
+.feature-list{display:flex;flex-direction:column;gap:6px}
+.feature-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;transition:all .2s}
+.feature-row:hover{border-color:#94a3b8}
+.feature-row.must .priority-dot{background:var(--blue)}
+.feature-row.optional .priority-dot{background:var(--amber)}
+.priority-dot{width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0;transition:background .2s}
+.feature-name{flex:1;font-size:13px;font-weight:500}
+.priority-toggle{display:flex;gap:4px}
+.p-btn{font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;border:1.5px solid var(--border);cursor:pointer;background:#fff;transition:all .15s}
+.p-btn.must-active{border-color:var(--blue);background:var(--blue-lt);color:var(--blue)}
+.p-btn.opt-active{border-color:var(--amber);background:#fef3c7;color:var(--amber)}
+
+/* ── AI suggestion card ── */
+.ai-card{background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:var(--radius);padding:16px 18px;margin-bottom:20px}
+.ai-card-head{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#0369a1;margin-bottom:10px}
+.ai-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:#e0f2fe;border-radius:12px;font-size:11px;font-weight:600;color:#0284c7;cursor:pointer;margin:3px}
+.ai-pill:hover{background:#bae6fd}
+
+/* ── Complexity badge ── */
+.complexity-row{display:flex;gap:12px;margin-bottom:24px}
+.complexity-badge{flex:1;padding:16px;border-radius:var(--radius);text-align:center;border:2px solid transparent}
+.complexity-badge .score{font-size:18px;font-weight:700;margin-bottom:4px}
+.complexity-badge .label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em}
+.complexity-badge.Low{border-color:var(--green);background:#f0fdf4;color:var(--green)}
+.complexity-badge.Medium{border-color:var(--amber);background:#fffbeb;color:var(--amber)}
+.complexity-badge.High{border-color:var(--red);background:#fef2f2;color:var(--red)}
+.complexity-badge.Enterprise{border-color:#7c3aed;background:#faf5ff;color:#7c3aed}
+
+/* ── Review section ── */
+.review-block{background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);padding:20px 22px;margin-bottom:14px}
+.review-block h4{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mid);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.review-row{display:flex;gap:12px;margin-bottom:6px;font-size:13px}
+.review-row .rk{color:var(--mid);min-width:130px;flex-shrink:0}
+.review-row .rv{color:var(--ink);font-weight:500;flex:1}
+
+/* ── Buttons ── */
+.btn-row{display:flex;justify-content:space-between;align-items:center;margin-top:32px;padding-top:24px;border-top:1px solid var(--border)}
+.btn{padding:12px 24px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:hover{background:#1d4ed8;transform:translateY(-1px);box-shadow:0 4px 12px #2563eb40}
+.btn-primary:disabled{background:#93c5fd;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-ghost{background:transparent;color:var(--mid);border:1.5px solid var(--border)}
+.btn-ghost:hover{border-color:#94a3b8;color:var(--ink)}
+.btn-submit{background:var(--ink);color:#fff;padding:14px 32px;font-size:15px}
+.btn-submit:hover{background:#1e293b;transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,.25)}
+
+/* ── Error banner ── */
+.error-banner{background:#fef2f2;border:1.5px solid #fecaca;border-radius:8px;padding:12px 16px;font-size:13px;color:var(--red);margin-bottom:20px;display:none}
+
+/* ── Loading spinner ── */
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Fade in ── */
+.step-panel{display:none;animation:fadeUp .3s ease}
+.step-panel.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Mobile ── */
+@media(max-width:768px){
+  .shell{grid-template-columns:1fr}
+  .left-rail{display:none}
+  .main{padding:24px 20px}
+  .type-grid{grid-template-columns:1fr 1fr}
+  .field-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- Left rail -->
+  <aside class="left-rail">
+    <div class="brand"><span>Devex</span> Studios</div>
+    <p class="tagline">Tell us about your project. We'll scope it, estimate it, and come back to you.</p>
+
+    <nav class="step-nav" id="stepNav">
+      <div class="step-item active" data-step="1">
+        <div class="step-dot">1</div>
+        <div class="step-meta">
+          <div class="step-name">About You</div>
+          <div class="step-desc">Contact & company</div>
+        </div>
+      </div>
+      <div class="step-item" data-step="2">
+        <div class="step-dot">2</div>
+        <div class="step-meta">
+          <div class="step-name">Project Overview</div>
+          <div class="step-desc">Type, goals & description</div>
+        </div>
+      </div>
+      <div class="step-item" data-step="3">
+        <div class="step-dot">3</div>
+        <div class="step-meta">
+          <div class="step-name">Features</div>
+          <div class="step-desc">Must-haves & nice-to-haves</div>
+        </div>
+      </div>
+      <div class="step-item" data-step="4">
+        <div class="step-dot">4</div>
+        <div class="step-meta">
+          <div class="step-name">Technical & Design</div>
+          <div class="step-desc">Stack, hosting & branding</div>
+        </div>
+      </div>
+      <div class="step-item" data-step="5">
+        <div class="step-dot">5</div>
+        <div class="step-meta">
+          <div class="step-name">Timeline & Budget</div>
+          <div class="step-desc">Dates & investment range</div>
+        </div>
+      </div>
+      <div class="step-item" data-step="6">
+        <div class="step-dot">6</div>
+        <div class="step-meta">
+          <div class="step-name">Review & Submit</div>
+          <div class="step-desc">Confirm and send</div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="progress-bar-wrap">
+      <div class="progress-label">
+        <span id="progressLabel">Step 1 of 6</span>
+        <span id="progressPct">0%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main" id="mainContent">
+    <div class="error-banner" id="errorBanner"></div>
+
+    <!-- ══ STEP 1: About You ══ -->
+    <div class="step-panel active" id="step1">
+      <div class="step-header">
+        <div class="step-badge">Step 1 of 6</div>
+        <h1 class="step-title">Let's start with you</h1>
+        <p class="step-subtitle">We'll use this to get back to you with a tailored scope and estimate.</p>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Full Name <span class="req">*</span></label>
+          <input type="text" id="contact_name" placeholder="e.g. Sam Clarke">
+        </div>
+        <div class="field">
+          <label>Company / Business Name</label>
+          <input type="text" id="company_name" placeholder="e.g. Acme Ltd">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Email Address <span class="req">*</span></label>
+          <input type="email" id="contact_email" placeholder="you@company.com">
+        </div>
+        <div class="field">
+          <label>Phone Number</label>
+          <input type="tel" id="contact_phone" placeholder="+44 7700 900000">
+        </div>
+      </div>
+      <div class="field">
+        <label>Project Name</label>
+        <input type="text" id="project_name" placeholder="e.g. Customer Portal, Brand Website...">
+        <p class="hint">A working title is fine — we can refine it later.</p>
+      </div>
+
+      <div class="btn-row">
+        <div></div>
+        <button class="btn btn-primary" onclick="goTo(2)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ══ STEP 2: Project Overview ══ -->
+    <div class="step-panel" id="step2">
+      <div class="step-header">
+        <div class="step-badge">Step 2 of 6</div>
+        <h1 class="step-title">What are we building?</h1>
+        <p class="step-subtitle">Pick the project type and tell us what you want to achieve.</p>
+      </div>
+
+      <div class="field">
+        <label>Project Type <span class="req">*</span></label>
+        <div class="type-grid" id="typeGrid">
+          <div class="type-card" data-value="website" onclick="selectType(this)">
+            <div class="icon">🌐</div>
+            <div class="label">Website</div>
+            <div class="desc">Brochure, landing, blog</div>
+          </div>
+          <div class="type-card" data-value="web_app" onclick="selectType(this)">
+            <div class="icon">⚙️</div>
+            <div class="label">Web App</div>
+            <div class="desc">Platform, portal, dashboard</div>
+          </div>
+          <div class="type-card" data-value="ecommerce" onclick="selectType(this)">
+            <div class="icon">🛒</div>
+            <div class="label">eCommerce</div>
+            <div class="desc">Online store, marketplace</div>
+          </div>
+          <div class="type-card" data-value="mobile_app" onclick="selectType(this)">
+            <div class="icon">📱</div>
+            <div class="label">Mobile App</div>
+            <div class="desc">iOS, Android, or both</div>
+          </div>
+          <div class="type-card" data-value="portal" onclick="selectType(this)">
+            <div class="icon">🏢</div>
+            <div class="label">Client Portal</div>
+            <div class="desc">Login area, self-service</div>
+          </div>
+          <div class="type-card" data-value="both" onclick="selectType(this)">
+            <div class="icon">🔗</div>
+            <div class="label">Web + App</div>
+            <div class="desc">Combined platform</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>What are your main goals?</label>
+        <div class="chip-group" id="goalsGroup">
+          <div class="chip" data-value="lead_gen" onclick="toggleChip(this)">Lead Generation</div>
+          <div class="chip" data-value="ecommerce" onclick="toggleChip(this)">Sell Products</div>
+          <div class="chip" data-value="booking" onclick="toggleChip(this)">Bookings / Appointments</div>
+          <div class="chip" data-value="branding" onclick="toggleChip(this)">Brand Awareness</div>
+          <div class="chip" data-value="automation" onclick="toggleChip(this)">Process Automation</div>
+          <div class="chip" data-value="customer_portal" onclick="toggleChip(this)">Customer Self-Service</div>
+          <div class="chip" data-value="data_capture" onclick="toggleChip(this)">Data Capture</div>
+          <div class="chip" data-value="community" onclick="toggleChip(this)">Community / Network</div>
+          <div class="chip" data-value="other" onclick="toggleChip(this)">Other</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Brief Description <span class="req">*</span></label>
+        <textarea id="brief_description" rows="4" placeholder="Describe what you need in your own words. The more detail the better — who uses it, what problem it solves, what makes it different."></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="goTo(1)">← Back</button>
+        <button class="btn btn-primary" onclick="goTo(3)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ══ STEP 3: Features ══ -->
+    <div class="step-panel" id="step3">
+      <div class="step-header">
+        <div class="step-badge">Step 3 of 6</div>
+        <h1 class="step-title">Features & functionality</h1>
+        <p class="step-subtitle">Mark each feature as Must-Have or Optional. This shapes the scope estimate.</p>
+      </div>
+
+      <div id="aiSuggestCard" class="ai-card" style="display:none">
+        <div class="ai-card-head">✦ AI Suggestions — based on your project type</div>
+        <div id="aiSuggestPills"></div>
+      </div>
+
+      <div class="field">
+        <label>Core Features</label>
+        <div class="feature-list" id="featureList"></div>
+      </div>
+
+      <div class="field">
+        <label>Any other features? <span style="color:var(--mid);font-weight:400">(optional)</span></label>
+        <input type="text" id="customFeatureInput" placeholder="Type a feature and press Enter">
+        <p class="hint">e.g. Custom reporting, Multi-language, Subscription billing</p>
+      </div>
+
+      <div class="field">
+        <label>Business context</label>
+        <div class="field-row">
+          <div>
+            <input type="text" id="target_audience" placeholder="Who are your users?">
+            <p class="hint">Target audience</p>
+          </div>
+          <div>
+            <input type="text" id="competitors" placeholder="Any competitors / references?">
+            <p class="hint">Competitor sites or apps</p>
+          </div>
+        </div>
+        <div style="margin-top:12px">
+          <input type="text" id="usp" placeholder="What makes you different?">
+          <p class="hint">Your unique selling point</p>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="goTo(2)">← Back</button>
+        <button class="btn btn-primary" onclick="goTo(4)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ══ STEP 4: Technical & Design ══ -->
+    <div class="step-panel" id="step4">
+      <div class="step-header">
+        <div class="step-badge">Step 4 of 6</div>
+        <h1 class="step-title">Technical & design preferences</h1>
+        <p class="step-subtitle">Not sure? Leave anything blank — we'll cover this in discovery.</p>
+      </div>
+
+      <div class="field">
+        <label>Design Style</label>
+        <div class="chip-group">
+          <div class="chip" data-group="design_style" data-value="modern" onclick="toggleChipGroup(this,'design_style')">Modern</div>
+          <div class="chip" data-group="design_style" data-value="minimal" onclick="toggleChipGroup(this,'design_style')">Minimal</div>
+          <div class="chip" data-group="design_style" data-value="bold" onclick="toggleChipGroup(this,'design_style')">Bold / Impactful</div>
+          <div class="chip" data-group="design_style" data-value="corporate" onclick="toggleChipGroup(this,'design_style')">Corporate</div>
+          <div class="chip" data-group="design_style" data-value="friendly" onclick="toggleChipGroup(this,'design_style')">Friendly / Approachable</div>
+          <div class="chip" data-group="design_style" data-value="premium" onclick="toggleChipGroup(this,'design_style')">Premium / Luxury</div>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Branding Available?</label>
+          <select id="has_branding">
+            <option value="">— Select —</option>
+            <option value="yes">Yes — logo, colours, fonts</option>
+            <option value="partial">Partial — some assets</option>
+            <option value="no">No — needs creating</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Content Provided?</label>
+          <select id="content_provided">
+            <option value="">— Select —</option>
+            <option value="yes">Yes — all content ready</option>
+            <option value="partial">Partial — some content</option>
+            <option value="no">No — needs writing</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Preferred Tech Stack</label>
+          <input type="text" id="preferred_tech" placeholder="e.g. React, WordPress, custom...">
+          <p class="hint">Leave blank if unsure</p>
+        </div>
+        <div class="field">
+          <label>Hosting Preference</label>
+          <select id="hosting">
+            <option value="">— Select —</option>
+            <option value="aws">AWS</option>
+            <option value="azure">Azure</option>
+            <option value="gcp">Google Cloud</option>
+            <option value="hetzner">Hetzner / VPS</option>
+            <option value="shared">Shared Hosting</option>
+            <option value="no_pref">No Preference</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Integrations Required</label>
+        <div class="chip-group">
+          <div class="chip" data-group="integrations" data-value="stripe" onclick="toggleChipMulti(this,'integrations')">Stripe / Payments</div>
+          <div class="chip" data-group="integrations" data-value="crm" onclick="toggleChipMulti(this,'integrations')">CRM (HubSpot / SF)</div>
+          <div class="chip" data-group="integrations" data-value="email_mktg" onclick="toggleChipMulti(this,'integrations')">Email Marketing</div>
+          <div class="chip" data-group="integrations" data-value="analytics" onclick="toggleChipMulti(this,'integrations')">Analytics (GA4)</div>
+          <div class="chip" data-group="integrations" data-value="social" onclick="toggleChipMulti(this,'integrations')">Social Login</div>
+          <div class="chip" data-group="integrations" data-value="maps" onclick="toggleChipMulti(this,'integrations')">Maps / Location</div>
+          <div class="chip" data-group="integrations" data-value="calendar" onclick="toggleChipMulti(this,'integrations')">Calendar / Booking</div>
+          <div class="chip" data-group="integrations" data-value="other" onclick="toggleChipMulti(this,'integrations')">Other</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>SEO & Performance Needs</label>
+        <select id="seo_level">
+          <option value="">— Select —</option>
+          <option value="basic">Basic — standard setup</option>
+          <option value="advanced">Advanced — full technical SEO</option>
+          <option value="none">Not required</option>
+        </select>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="goTo(3)">← Back</button>
+        <button class="btn btn-primary" onclick="goTo(5)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ══ STEP 5: Timeline & Budget ══ -->
+    <div class="step-panel" id="step5">
+      <div class="step-header">
+        <div class="step-badge">Step 5 of 6</div>
+        <h1 class="step-title">Timeline & investment</h1>
+        <p class="step-subtitle">Honest answers here give us the best chance of building something that works for you.</p>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Ideal Start Date</label>
+          <input type="date" id="start_date">
+        </div>
+        <div class="field">
+          <label>Target Launch Date</label>
+          <input type="date" id="launch_date">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Budget Range</label>
+        <div class="chip-group">
+          <div class="chip" data-group="budget" data-value="under_5k" onclick="toggleChipGroup(this,'budget')">Under £5k</div>
+          <div class="chip" data-group="budget" data-value="5_10k" onclick="toggleChipGroup(this,'budget')">£5k – £10k</div>
+          <div class="chip" data-group="budget" data-value="10_25k" onclick="toggleChipGroup(this,'budget')">£10k – £25k</div>
+          <div class="chip" data-group="budget" data-value="25_50k" onclick="toggleChipGroup(this,'budget')">£25k – £50k</div>
+          <div class="chip" data-group="budget" data-value="50k_plus" onclick="toggleChipGroup(this,'budget')">£50k+</div>
+          <div class="chip" data-group="budget" data-value="tbd" onclick="toggleChipGroup(this,'budget')">Not sure yet</div>
+        </div>
+        <p class="hint">This won't be held against you — it helps us right-size the solution.</p>
+      </div>
+
+      <div class="field">
+        <label>Maintenance & Support After Launch?</label>
+        <select id="maintenance_required">
+          <option value="">— Select —</option>
+          <option value="yes_retainer">Yes — ongoing retainer</option>
+          <option value="yes_ondemand">Yes — on demand / ad hoc</option>
+          <option value="no">No — handover only</option>
+          <option value="unsure">Not sure yet</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Anything else we should know?</label>
+        <textarea id="additional_notes" rows="3" placeholder="Constraints, must-avoid technologies, previous bad experiences, anything that'll help us hit the ground running..."></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="goTo(4)">← Back</button>
+        <button class="btn btn-primary" onclick="goTo(6)">Review & Submit →</button>
+      </div>
+    </div>
+
+    <!-- ══ STEP 6: Review & Submit ══ -->
+    <div class="step-panel" id="step6">
+      <div class="step-header">
+        <div class="step-badge">Step 6 of 6</div>
+        <h1 class="step-title">Review & submit</h1>
+        <p class="step-subtitle">Check everything looks right, then send it over. We'll reply within one business day.</p>
+      </div>
+
+      <div id="reviewContent"></div>
+
+      <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:var(--radius);padding:14px 18px;font-size:13px;color:#15803d;margin-bottom:8px">
+        ✓ When you submit, our AI will immediately analyse your requirements and generate a complexity estimate — before we even speak.
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="goTo(5)">← Back</button>
+        <button class="btn btn-primary btn-submit" id="submitBtn" onclick="submitForm()">
+          <span id="submitLabel">Submit Requirements</span>
+        </button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Phase 2: Wizard logic extracted to static/js/dx/wizard.js -->
+<script src="{{ url_for('static', filename='js/dx/wizard.js') }}"></script>
+<script>
+/* Phase 2: inline script removed — all logic in static/js/dx/wizard.js
+   Legacy variable stubs below are intentionally shadowed/unreachable */
+if (false) { var _legacy_state = {
+  currentStep: 1,
+  totalSteps: 6,
+  projectType: '',
+  goals: [],
+  features: {},        // { name: 'must' | 'optional' | null }
+  integrations: [],
+  designStyle: '',
+  budget: '',
+  aiSuggestions: null,
+};
+
+// ══ Default feature set by project type ══
+var _BASE_FEATURES_LEGACY = {
+  website:    ['Homepage','About Page','Services/Products Page','Contact Form','Mobile Responsive','SEO Basics'],
+  web_app:    ['User Login / Auth','User Dashboard','Admin Panel','Search & Filter','Notifications','Role-Based Access'],
+  ecommerce:  ['Product Catalogue','Shopping Cart','Checkout / Payments','Order Management','Customer Accounts','Discount Codes'],
+  mobile_app: ['User Onboarding','Push Notifications','Offline Mode','Profile Management','In-App Messaging','App Store Submission'],
+  portal:     ['Secure Login','Document Upload','Status Tracking','User Roles','Audit Trail','Email Notifications'],
+  both:       ['User Auth','Web Dashboard','Mobile App','API Backend','Push Notifications','Admin Panel'],
+  other:      ['User Authentication','Main Dashboard','Data Entry Forms','Reporting','Email Notifications','Admin Controls'],
+}; } /* end if(false) legacy guard */
+
+// Functions below are defined in wizard.js — stubs here are intentionally unreachable
+if (false) {
+function goTo(step) {
+  if (step > state.currentStep) {
+    const err = validateStep(state.currentStep);
+    if (err) { showError(err); return; }
+  }
+  hideError();
+
+  // Mark previous as done
+  const prevItem = document.querySelector(`[data-step="${state.currentStep}"]`);
+  if (prevItem && step > state.currentStep) {
+    prevItem.classList.remove('active');
+    prevItem.classList.add('done');
+  }
+  if (step < state.currentStep) {
+    const wasItem = document.querySelector(`[data-step="${state.currentStep}"]`);
+    if (wasItem) { wasItem.classList.remove('active','done'); }
+  }
+
+  document.getElementById(`step${state.currentStep}`).classList.remove('active');
+  state.currentStep = step;
+  document.getElementById(`step${step}`).classList.add('active');
+
+  const navItem = document.querySelector(`[data-step="${step}"]`);
+  if (navItem) {
+    document.querySelectorAll('.step-item').forEach(i => i.classList.remove('active'));
+    navItem.classList.add('active');
+    navItem.classList.remove('done');
+  }
+
+  updateProgress();
+
+  // On entering step 3: load features + fire AI suggest
+  if (step === 3) { buildFeatureList(); fetchAiSuggestions(); }
+  // On entering step 6: build review
+  if (step === 6) { buildReview(); }
+
+  window.scrollTo(0, 0);
+}
+
+function validateStep(step) {
+  if (step === 1) {
+    if (!v('contact_name').trim()) return 'Full name is required.';
+    if (!v('contact_email').trim()) return 'Email address is required.';
+    if (!/\S+@\S+\.\S+/.test(v('contact_email'))) return 'Please enter a valid email address.';
+  }
+  if (step === 2) {
+    if (!state.projectType) return 'Please select a project type.';
+    if (!v('brief_description').trim()) return 'Please describe your project.';
+  }
+  return null;
+}
+
+function updateProgress() {
+  const pct = Math.round(((state.currentStep - 1) / state.totalSteps) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = `Step ${state.currentStep} of ${state.totalSteps}`;
+  document.getElementById('progressPct').textContent = pct + '%';
+}
+
+// ══ Type selection ══
+function selectType(el) {
+  document.querySelectorAll('.type-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  state.projectType = el.dataset.value;
+}
+
+// ══ Chip toggles ══
+function toggleChip(el) {
+  el.classList.toggle('selected');
+  const val = el.dataset.value;
+  if (el.classList.contains('selected')) {
+    if (!state.goals.includes(val)) state.goals.push(val);
+  } else {
+    state.goals = state.goals.filter(g => g !== val);
+  }
+}
+
+function toggleChipGroup(el, group) {
+  document.querySelectorAll(`[data-group="${group}"]`).forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  if (group === 'budget') state.budget = el.dataset.value;
+  if (group === 'design_style') state.designStyle = el.dataset.value;
+}
+
+function toggleChipMulti(el, group) {
+  el.classList.toggle('selected');
+  const val = el.dataset.value;
+  if (el.classList.contains('selected')) {
+    if (!state.integrations.includes(val)) state.integrations.push(val);
+  } else {
+    state.integrations = state.integrations.filter(i => i !== val);
+  }
+}
+
+// ══ Feature list ══
+function buildFeatureList() {
+  const list = document.getElementById('featureList');
+  const type = state.projectType || 'website';
+  const features = BASE_FEATURES[type] || BASE_FEATURES.other;
+
+  // Preserve existing selections
+  features.forEach(f => {
+    if (!(f in state.features)) state.features[f] = null;
+  });
+
+  list.innerHTML = '';
+  Object.keys(state.features).forEach(name => {
+    list.appendChild(makeFeatureRow(name, state.features[name]));
+  });
+
+  // Custom feature input
+  document.getElementById('customFeatureInput').onkeydown = (e) => {
+    if (e.key === 'Enter') {
+      const val = e.target.value.trim();
+      if (val && !(val in state.features)) {
+        state.features[val] = 'optional';
+        list.appendChild(makeFeatureRow(val, 'optional'));
+        e.target.value = '';
+      }
+    }
+  };
+}
+
+function makeFeatureRow(name, priority) {
+  const row = document.createElement('div');
+  row.className = `feature-row${priority ? ' ' + priority : ''}`;
+  row.dataset.feature = name;
+  row.innerHTML = `
+    <div class="priority-dot"></div>
+    <div class="feature-name">${name}</div>
+    <div class="priority-toggle">
+      <button class="p-btn ${priority==='must'?'must-active':''}" onclick="setFeaturePriority('${name}','must',this)">Must</button>
+      <button class="p-btn ${priority==='optional'?'opt-active':''}" onclick="setFeaturePriority('${name}','optional',this)">Optional</button>
+    </div>`;
+  return row;
+}
+
+function setFeaturePriority(name, priority, btn) {
+  state.features[name] = priority;
+  const row = document.querySelector(`[data-feature="${name}"]`);
+  if (!row) return;
+  row.className = `feature-row ${priority}`;
+  row.querySelectorAll('.p-btn').forEach(b => {
+    b.className = 'p-btn';
+    if (b === btn) b.className = `p-btn ${priority==='must'?'must-active':'opt-active'}`;
+  });
+}
+
+// ══ AI mid-form suggestions ══
+async function fetchAiSuggestions() {
+  if (!state.projectType || state.aiSuggestions) return;
+  try {
+    const res = await fetch('/api/quote/suggest', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        project_type: state.projectType,
+        goals: state.goals,
+        features: Object.keys(state.features).filter(f => state.features[f]),
+        brief_description: v('brief_description'),
+      })
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    state.aiSuggestions = data;
+    renderAiSuggestions(data);
+  } catch(e) { /* non-critical */ }
+}
+
+function renderAiSuggestions(data) {
+  const card = document.getElementById('aiSuggestCard');
+  const pills = document.getElementById('aiSuggestPills');
+  const suggestions = data.suggested_features || [];
+  if (!suggestions.length) return;
+
+  pills.innerHTML = suggestions
+    .filter(f => !(f in state.features))
+    .map(f => `<div class="ai-pill" onclick="addAiFeature('${f}',this)">+ ${f}</div>`)
+    .join('');
+
+  if (pills.children.length > 0) card.style.display = 'block';
+}
+
+function addAiFeature(name, pill) {
+  if (!(name in state.features)) {
+    state.features[name] = 'optional';
+    const list = document.getElementById('featureList');
+    list.appendChild(makeFeatureRow(name, 'optional'));
+  }
+  pill.style.opacity = '.4';
+  pill.style.pointerEvents = 'none';
+}
+
+// ══ Review builder ══
+function buildReview() {
+  const el = document.getElementById('reviewContent');
+  const features = {
+    must_have: Object.keys(state.features).filter(f => state.features[f] === 'must'),
+    optional:  Object.keys(state.features).filter(f => state.features[f] === 'optional'),
+  };
+
+  el.innerHTML = `
+    <div class="review-block">
+      <h4>Contact</h4>
+      ${rr('Name', v('contact_name'))}
+      ${rr('Email', v('contact_email'))}
+      ${rr('Phone', v('contact_phone') || '—')}
+      ${rr('Company', v('company_name') || '—')}
+    </div>
+    <div class="review-block">
+      <h4>Project</h4>
+      ${rr('Name', v('project_name') || '—')}
+      ${rr('Type', state.projectType.replace('_',' '))}
+      ${rr('Goals', state.goals.join(', ') || '—')}
+      ${rr('Description', v('brief_description'))}
+    </div>
+    <div class="review-block">
+      <h4>Features</h4>
+      ${rr('Must-Have', features.must_have.join(', ') || '— none marked yet')}
+      ${rr('Optional', features.optional.join(', ') || '—')}
+    </div>
+    <div class="review-block">
+      <h4>Technical & Design</h4>
+      ${rr('Stack', v('preferred_tech') || '—')}
+      ${rr('Hosting', v('hosting') || '—')}
+      ${rr('Design Style', state.designStyle || '—')}
+      ${rr('Integrations', state.integrations.join(', ') || '—')}
+    </div>
+    <div class="review-block">
+      <h4>Timeline & Budget</h4>
+      ${rr('Start Date', v('start_date') || '—')}
+      ${rr('Launch Date', v('launch_date') || '—')}
+      ${rr('Budget', state.budget.replace(/_/g,' ') || '—')}
+      ${rr('Maintenance', v('maintenance_required') || '—')}
+    </div>`;
+}
+
+function rr(k, v2) {
+  return `<div class="review-row"><span class="rk">${k}</span><span class="rv">${v2}</span></div>`;
+}
+
+// ══ Submit ══
+async function submitForm() {
+  const btn = document.getElementById('submitBtn');
+  const label = document.getElementById('submitLabel');
+  btn.disabled = true;
+  label.innerHTML = '<span class="spinner"></span> Analysing with AI...';
+
+  const features = {
+    must_have: Object.keys(state.features).filter(f => state.features[f] === 'must'),
+    optional:  Object.keys(state.features).filter(f => state.features[f] === 'optional'),
+  };
+
+  const payload = {
+    contact_name:       v('contact_name'),
+    contact_email:      v('contact_email'),
+    contact_phone:      v('contact_phone'),
+    company_name:       v('company_name'),
+    project_name:       v('project_name'),
+    project_type:       state.projectType,
+    brief_description:  v('brief_description'),
+    goals:              state.goals,
+    features,
+    target_audience:    v('target_audience'),
+    competitors:        v('competitors'),
+    usp:                v('usp'),
+    design: {
+      style:             state.designStyle,
+      has_branding:      v('has_branding'),
+      content_provided:  v('content_provided'),
+    },
+    tech: {
+      preferred_tech:   v('preferred_tech'),
+      hosting:          v('hosting'),
+      integrations:     state.integrations,
+      seo_level:        v('seo_level'),
+    },
+    budget_range:        state.budget,
+    start_date:          v('start_date'),
+    launch_date:         v('launch_date'),
+    maintenance: {
+      type: v('maintenance_required'),
+    },
+    additional_notes:    v('additional_notes'),
+    source:              'web',
+  };
+
+  try {
+    const res = await fetch('/quote/submit', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+
+    if (!res.ok || !data.ok) {
+      showError((data.errors || ['Submission failed. Please try again.']).join(' '));
+      btn.disabled = false;
+      label.textContent = 'Submit Requirements';
+      return;
+    }
+
+    window.location.href = `/quote/confirmation/${data.ref}`;
+  } catch(e) {
+    showError('Network error. Please check your connection and try again.');
+    btn.disabled = false;
+    label.textContent = 'Submit Requirements';
+  }
+}
+
+// ══ Helpers ══
+function v(id) {
+  const el = document.getElementById(id);
+  return el ? el.value : '';
+}
+
+function showError(msg) {
+  const b = document.getElementById('errorBanner');
+  b.textContent = msg;
+  b.style.display = 'block';
+  b.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function hideError() {
+  document.getElementById('errorBanner').style.display = 'none';
+}
+
+// ══ Init ══
+} /* end if(false) legacy functions guard */
+/* wizard.js loaded above handles all logic */
+</script>
+</body>
+</html>

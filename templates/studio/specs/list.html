@@ -1,0 +1,127 @@
+{% extends "layouts/app.html" %}
+{% block title %}Spec Scope Builder — Devex AI Studios{% endblock %}
+
+{% block extra_styles %}
+<style>
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+.page-header h1{font-size:22px;font-weight:700;color:#0f172a}
+.page-header p{font-size:13px;color:#64748b;margin-top:3px}
+
+.specs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+
+.spec-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:22px;
+           text-decoration:none;color:inherit;display:block;
+           transition:border-color .15s, box-shadow .15s}
+.spec-card:hover{border-color:#93c5fd;box-shadow:0 4px 20px rgba(37,99,235,.07)}
+
+.sc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.sc-title{font-size:16px;font-weight:700;color:#0f172a;line-height:1.4}
+.sc-client{font-size:12px;color:#64748b;margin-top:3px}
+
+.sc-status{padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;flex-shrink:0}
+.status-draft{background:#f1f5f9;color:#475569}
+.status-in_review{background:#fef3c7;color:#92400e}
+.status-final{background:#dcfce7;color:#15803d}
+.status-archived{background:#f1f5f9;color:#94a3b8}
+
+.sc-progress{margin-bottom:14px}
+.sc-prog-bar{background:#f1f5f9;border-radius:6px;height:6px;margin-top:6px}
+.sc-prog-fill{background:#2563eb;border-radius:6px;height:6px;transition:width .3s}
+.sc-prog-label{display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;margin-top:4px}
+
+.sc-meta{display:flex;gap:10px;flex-wrap:wrap}
+.sc-chip{background:#f8fafc;border:1px solid #e2e8f0;border-radius:5px;padding:3px 9px;
+         font-size:11px;color:#475569}
+
+.sc-ai{display:flex;align-items:center;gap:6px;margin-top:12px;padding-top:12px;
+       border-top:1px solid #f1f5f9;font-size:11px}
+.sc-ai-badge{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700}
+.cx-Low{background:#dcfce7;color:#15803d}
+.cx-Medium{background:#fef9c3;color:#854d0e}
+.cx-High{background:#fee2e2;color:#b91c1c}
+.cx-Enterprise{background:#f3e8ff;color:#7c3aed}
+
+.empty-state{text-align:center;padding:80px 40px;background:#fff;border:1.5px dashed #e2e8f0;
+             border-radius:12px}
+.empty-state h3{font-size:18px;font-weight:700;color:#0f172a;margin-bottom:8px}
+.empty-state p{font-size:14px;color:#64748b;margin-bottom:24px}
+</style>
+{% endblock %}
+
+{% block sidebar %}
+  {% set active_nav = 'specs' %}
+  {% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-title">
+  <h1>Spec Scope Builder</h1>
+  <p>Software project scope documents</p>
+</div>
+<div class="topbar-actions">
+  <a href="/studio/specs/new" class="btn btn-primary">+ New Spec</a>
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+.btn{padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;
+     border:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.btn-primary{background:#2563eb;color:#fff}
+.btn-primary:hover{background:#1d4ed8}
+</style>
+
+{% if specs %}
+<div class="specs-grid">
+  {% for spec in specs %}
+  <a href="/studio/specs/{{ spec.id }}" class="spec-card">
+    <div class="sc-top">
+      <div>
+        <div class="sc-title">{{ spec.title }}</div>
+        {% if spec.client_name %}<div class="sc-client">{{ spec.client_name }}</div>{% endif %}
+      </div>
+      <span class="sc-status status-{{ spec.status }}">{{ spec.status.replace('_',' ').title() }}</span>
+    </div>
+
+    <div class="sc-progress">
+      {% set pct = ((spec.answered_questions / spec.total_questions) * 100)|int if spec.total_questions else 0 %}
+      <div style="font-size:11px;color:#64748b">{{ spec.answered_questions }}/{{ spec.total_questions }} questions answered</div>
+      <div class="sc-prog-bar">
+        <div class="sc-prog-fill" style="width:{{ pct }}%"></div>
+      </div>
+    </div>
+
+    <div class="sc-meta">
+      {% if spec.project_type %}
+        <span class="sc-chip">{{ spec.project_type }}</span>
+      {% endif %}
+      {% if spec.quote_ref %}
+        <span class="sc-chip">{{ spec.quote_ref }}</span>
+      {% endif %}
+      <span class="sc-chip">{{ spec.updated_at[:10] if spec.updated_at else '' }}</span>
+    </div>
+
+    {% if spec.latest_ai %}
+      {% set ai = spec.latest_ai %}
+      <div class="sc-ai">
+        <span style="color:#94a3b8">✦ AI:</span>
+        {% if ai._output and ai._output.complexity_score %}
+          <span class="sc-ai-badge cx-{{ ai._output.complexity_score }}">{{ ai._output.complexity_score }}</span>
+          {% if ai._output.estimated_weeks %}<span style="color:#64748b">~{{ ai._output.estimated_weeks }} weeks</span>{% endif %}
+        {% endif %}
+        <span style="color:#94a3b8;margin-left:auto">{{ ai.provider }}</span>
+      </div>
+    {% endif %}
+  </a>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="empty-state">
+  <div style="font-size:40px;margin-bottom:16px">📋</div>
+  <h3>No spec documents yet</h3>
+  <p>Create a structured software scope document to capture all project requirements before build starts.</p>
+  <a href="/studio/specs/new" class="btn btn-primary">+ Create First Spec</a>
+</div>
+{% endif %}
+{% endblock %}

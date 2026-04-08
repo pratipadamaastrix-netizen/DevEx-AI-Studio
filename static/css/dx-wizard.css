@@ -1,0 +1,156 @@
+/* ============================================================
+   Devex AI Studios — Quote Wizard Styles
+   Extracted from quote_wizard.html Phase 2
+   ============================================================ */
+
+:root {
+  --ink:     #0d1117;
+  --blue:    #2563eb;
+  --blue-lt: #dbeafe;
+  --silver:  #f8fafc;
+  --border:  #e2e8f0;
+  --mid:     #64748b;
+  --green:   #16a34a;
+  --amber:   #d97706;
+  --red:     #dc2626;
+  --white:   #ffffff;
+  --radius:  10px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--silver);color:var(--ink);min-height:100vh}
+
+/* ── Layout ── */
+.shell{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+.left-rail{background:var(--ink);color:#fff;padding:40px 32px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow:hidden}
+.main{padding:48px 56px;max-width:780px}
+
+/* ── Brand ── */
+.brand{font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;margin-bottom:40px}
+.brand span{color:#fff}
+.tagline{font-size:22px;font-weight:600;line-height:1.35;margin-bottom:32px;color:#f1f5f9}
+
+/* ── Step nav ── */
+.step-nav{flex:1}
+.step-item{display:flex;align-items:flex-start;gap:14px;margin-bottom:6px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:background .2s}
+.step-item:hover{background:rgba(255,255,255,.06)}
+.step-item.active{background:rgba(37,99,235,.25)}
+.step-item.done .step-dot{background:var(--green);border-color:var(--green)}
+.step-item.done .step-dot::after{content:'✓';font-size:9px;color:#fff;line-height:1}
+.step-dot{width:22px;height:22px;border-radius:50%;border:2px solid #334155;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#64748b;flex-shrink:0;margin-top:2px;transition:all .3s}
+.step-item.active .step-dot{border-color:var(--blue);background:var(--blue);color:#fff}
+.step-meta{flex:1}
+.step-name{font-size:13px;font-weight:600;color:#94a3b8;transition:color .2s}
+.step-item.active .step-name{color:#fff}
+.step-item.done .step-name{color:#6ee7b7}
+.step-desc{font-size:11px;color:#475569;margin-top:2px}
+
+/* ── Progress bar ── */
+.progress-bar-wrap{margin-top:auto;padding-top:24px;border-top:1px solid #1e293b}
+.progress-label{font-size:11px;color:#64748b;display:flex;justify-content:space-between;margin-bottom:8px}
+.progress-track{height:3px;background:#1e293b;border-radius:2px}
+.progress-fill{height:3px;background:var(--blue);border-radius:2px;transition:width .4s ease}
+
+/* ── Step header ── */
+.step-header{margin-bottom:36px}
+.step-badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);background:var(--blue-lt);padding:4px 10px;border-radius:20px;margin-bottom:14px}
+.step-title{font-size:30px;font-weight:700;color:var(--ink);line-height:1.2;margin-bottom:8px}
+.step-subtitle{font-size:15px;color:var(--mid);line-height:1.5}
+
+/* ── Form elements ── */
+.field{margin-bottom:22px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:7px}
+.field label .req{color:var(--red);margin-left:2px}
+.field .hint{font-size:12px;color:var(--mid);margin-top:5px}
+input[type=text],input[type=email],input[type=tel],input[type=date],textarea,select{
+  width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius);
+  font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);background:#fff;
+  transition:border .2s,box-shadow .2s;outline:none
+}
+input:focus,textarea:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px #dbeafe}
+input.error,textarea.error,select.error{border-color:var(--red)}
+textarea{resize:vertical;min-height:90px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* ── Type cards ── */
+.type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.type-card{padding:16px 14px;border:1.5px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .2s;text-align:center;background:#fff}
+.type-card:hover{border-color:var(--blue);background:var(--blue-lt)}
+.type-card.selected{border-color:var(--blue);background:var(--blue-lt);box-shadow:0 0 0 3px #bfdbfe}
+.type-card .icon{font-size:24px;margin-bottom:8px}
+.type-card .label{font-size:12px;font-weight:600;color:var(--ink)}
+.type-card .desc{font-size:11px;color:var(--mid);margin-top:3px}
+
+/* ── Goal chips ── */
+.chip-group{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{padding:7px 14px;border:1.5px solid var(--border);border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;background:#fff;user-select:none}
+.chip:hover{border-color:var(--blue);color:var(--blue)}
+.chip.selected{border-color:var(--blue);background:var(--blue);color:#fff}
+
+/* ── Feature toggle list ── */
+.feature-list{display:flex;flex-direction:column;gap:6px}
+.feature-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;transition:all .2s}
+.feature-row:hover{border-color:#94a3b8}
+.feature-row.must .priority-dot{background:var(--blue)}
+.feature-row.optional .priority-dot{background:var(--amber)}
+.priority-dot{width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0;transition:background .2s}
+.feature-name{flex:1;font-size:13px;font-weight:500}
+.priority-toggle{display:flex;gap:4px}
+.p-btn{font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;border:1.5px solid var(--border);cursor:pointer;background:#fff;transition:all .15s}
+.p-btn.must-active{border-color:var(--blue);background:var(--blue-lt);color:var(--blue)}
+.p-btn.opt-active{border-color:var(--amber);background:#fef3c7;color:var(--amber)}
+
+/* ── AI suggestion card ── */
+.ai-card{background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:var(--radius);padding:16px 18px;margin-bottom:20px}
+.ai-card-head{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#0369a1;margin-bottom:10px}
+.ai-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:#e0f2fe;border-radius:12px;font-size:11px;font-weight:600;color:#0284c7;cursor:pointer;margin:3px}
+.ai-pill:hover{background:#bae6fd}
+
+/* ── Complexity badge ── */
+.complexity-row{display:flex;gap:12px;margin-bottom:24px}
+.complexity-badge{flex:1;padding:16px;border-radius:var(--radius);text-align:center;border:2px solid transparent}
+.complexity-badge .score{font-size:18px;font-weight:700;margin-bottom:4px}
+.complexity-badge .label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em}
+.complexity-badge.Low{border-color:var(--green);background:#f0fdf4;color:var(--green)}
+.complexity-badge.Medium{border-color:var(--amber);background:#fffbeb;color:var(--amber)}
+.complexity-badge.High{border-color:var(--red);background:#fef2f2;color:var(--red)}
+.complexity-badge.Enterprise{border-color:#7c3aed;background:#faf5ff;color:#7c3aed}
+
+/* ── Review section ── */
+.review-block{background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);padding:20px 22px;margin-bottom:14px}
+.review-block h4{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mid);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.review-row{display:flex;gap:12px;margin-bottom:6px;font-size:13px}
+.review-row .rk{color:var(--mid);min-width:130px;flex-shrink:0}
+.review-row .rv{color:var(--ink);font-weight:500;flex:1}
+
+/* ── Buttons ── */
+.btn-row{display:flex;justify-content:space-between;align-items:center;margin-top:32px;padding-top:24px;border-top:1px solid var(--border)}
+.btn{padding:12px 24px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:hover{background:#1d4ed8;transform:translateY(-1px);box-shadow:0 4px 12px #2563eb40}
+.btn-primary:disabled{background:#93c5fd;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-ghost{background:transparent;color:var(--mid);border:1.5px solid var(--border)}
+.btn-ghost:hover{border-color:#94a3b8;color:var(--ink)}
+.btn-submit{background:var(--ink);color:#fff;padding:14px 32px;font-size:15px}
+.btn-submit:hover{background:#1e293b;transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,.25)}
+
+/* ── Error banner ── */
+.error-banner{background:#fef2f2;border:1.5px solid #fecaca;border-radius:8px;padding:12px 16px;font-size:13px;color:var(--red);margin-bottom:20px;display:none}
+
+/* ── Loading spinner ── */
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Fade in ── */
+.step-panel{display:none;animation:fadeUp .3s ease}
+.step-panel.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Mobile ── */
+@media(max-width:768px){
+  .shell{grid-template-columns:1fr}
+  .left-rail{display:none}
+  .main{padding:24px 20px}
+  .type-grid{grid-template-columns:1fr 1fr}
+  .field-row{grid-template-columns:1fr}
+}

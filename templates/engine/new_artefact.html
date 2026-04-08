@@ -1,0 +1,141 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Create New Report - Facilities Management{% endblock %}
+
+{% block sidebar %}
+    {% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-title">
+    <h1>Create New Report</h1>
+    <p>Select report type and configure sections</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="wizard-container">
+    <div class="wizard-card">
+        <div class="wizard-step" id="step1">
+            <h2>Step 1: Report Type</h2>
+            <p class="step-description">What kind of FM report are you creating?</p>
+
+            <div class="type-grid">
+                <div class="type-card" data-type="engagement">
+                    <div class="type-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></div>
+                    <h3>Inspection Report</h3>
+                    <p>Site visit, condition survey, routine property inspection</p>
+                    <div class="type-badge">Most Common</div>
+                </div>
+
+                <div class="type-card" data-type="incident">
+                    <div class="type-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></div>
+                    <h3>Incident Report</h3>
+                    <p>Reactive incident, damage report, emergency response</p>
+                </div>
+
+                <div class="type-card" data-type="investigation">
+                    <div class="type-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg></div>
+                    <h3>Investigation</h3>
+                    <p>Root cause analysis, recurring fault investigation, complaints</p>
+                </div>
+
+                <div class="type-card" data-type="assessment">
+                    <div class="type-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg></div>
+                    <h3>Assessment</h3>
+                    <p>Compliance check, risk assessment, contractor evaluation</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="wizard-step hidden" id="step2">
+            <h2>Step 2: Sections</h2>
+            <p class="step-description">Select which sections to include in this report</p>
+
+            <div class="module-grid">
+                <div class="module-card" data-module="inspection">
+                    <input type="checkbox" id="mod-findings" name="module" value="inspection" checked>
+                    <label for="mod-findings">
+                        <div class="module-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></div>
+                        <div class="module-info">
+                            <h3>Findings</h3>
+                            <p>Observations, defects, items requiring action</p>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="module-card" data-module="incident_case">
+                    <input type="checkbox" id="mod-timeline" name="module" value="incident_case">
+                    <label for="mod-timeline">
+                        <div class="module-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg></div>
+                        <div class="module-info">
+                            <h3>Timeline & Actions</h3>
+                            <p>Chronological log, remedial actions, follow-up tasks</p>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="module-card" data-module="risk_modelling">
+                    <input type="checkbox" id="mod-risk" name="module" value="risk_modelling">
+                    <label for="mod-risk">
+                        <div class="module-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></div>
+                        <div class="module-info">
+                            <h3>Risk Assessment</h3>
+                            <p>Risk scoring, priority matrix, compliance notes</p>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="module-card" data-module="photo_evidence">
+                    <input type="checkbox" id="mod-photos" name="module" value="photo_evidence">
+                    <label for="mod-photos">
+                        <div class="module-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg></div>
+                        <div class="module-info">
+                            <h3>Photo Evidence</h3>
+                            <p>Site photos, before/after images, documentation</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="wizard-step hidden" id="step3">
+            <h2>Step 3: Details</h2>
+            <p class="step-description">Provide basic information about this report</p>
+
+            <div class="form-group">
+                <label for="title">Report Title *</label>
+                <input type="text" id="title" name="title" placeholder="e.g., Quarterly Inspection — Ikoyi Phase 2" required>
+            </div>
+
+            <div class="form-group">
+                <label for="client">Client (Optional)</label>
+                <select id="client" name="client">
+                    <option value="">-- Select Client --</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="analyst">Prepared By</label>
+                <input type="text" id="analyst" name="analyst" placeholder="Your name or team">
+            </div>
+
+            <div class="summary-box">
+                <h4>Summary</h4>
+                <p><strong>Type:</strong> <span id="summary-type">--</span></p>
+                <p><strong>Sections:</strong> <span id="summary-modules">--</span></p>
+                <p><strong>Title:</strong> <span id="summary-title">--</span></p>
+            </div>
+        </div>
+
+        <div class="wizard-actions">
+            <button type="button" class="btn btn-secondary" id="btn-back" style="display:none;">← Back</button>
+            <button type="button" class="btn btn-primary" id="btn-next">Next →</button>
+            <button type="button" class="btn btn-primary" id="btn-create" style="display:none;">Create Report</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/engine/wizard.js') }}"></script>
+{% endblock %}

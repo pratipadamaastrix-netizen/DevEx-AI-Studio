@@ -1,0 +1,762 @@
+{% extends "layouts/app.html" %}
+{% block title %}{{ spec.title }} — Meeting Room{% endblock %}
+
+{% set is_admin = is_admin if is_admin is defined else true %}
+{% set pct = ((answered_q/total_q)*100)|int if total_q else 0 %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dx.css') }}">
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   MEETING ROOM — BUILDER LAYOUT
+   Full-screen workspace inside the Devex app shell.
+   Three layers: global shell → room canvas → builder internals.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Break out of .container constraints ─────────────────────────── */
+.container{max-width:none !important;padding:0 !important;overflow:hidden}
+
+/* ── Room Canvas ─────────────────────────────────────────────────── */
+.room{display:flex;flex-direction:column;height:calc(100vh - 65px);overflow:hidden;background:#f5f8fc}
+
+/* ── Room Header ─────────────────────────────────────────────────── */
+.room-header{
+  background:linear-gradient(135deg,#0c1525 0%,#152644 100%);
+  padding:18px 28px;display:flex;align-items:center;gap:20px;flex-shrink:0;
+  border-bottom:1px solid rgba(37,99,235,.2);min-height:72px;flex-wrap:wrap}
+.rh-identity{flex:1;min-width:200px}
+.rh-title{font-size:17px;font-weight:700;color:#f1f5f9;line-height:1.3}
+.rh-sub{font-size:11px;color:#5b7a9e;margin-top:2px;display:flex;align-items:center;gap:10px}
+.rh-sub a{color:#60a5fa;text-decoration:none}
+
+.rh-badges{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rh-badge{padding:4px 12px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:.04em}
+.badge-mode-admin{background:rgba(37,99,235,.18);color:#60a5fa;border:1px solid rgba(37,99,235,.3)}
+.badge-mode-client{background:rgba(245,158,11,.14);color:#fbbf24;border:1px solid rgba(245,158,11,.3)}
+.badge-status{background:rgba(255,255,255,.06);color:#8b9bb4}
+.badge-status-in_review{background:rgba(245,158,11,.12);color:#fbbf24}
+.badge-status-final{background:rgba(34,197,94,.12);color:#4ade80}
+
+.rh-progress{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.rh-prog-bar{width:140px;height:5px;background:rgba(255,255,255,.08);border-radius:6px;overflow:hidden}
+.rh-prog-fill{height:5px;background:#2563eb;border-radius:6px;transition:width .4s}
+.rh-prog-label{font-size:11px;color:#5b7a9e;font-weight:500;white-space:nowrap}
+
+.rh-actions{display:flex;gap:8px;flex-shrink:0}
+.rh-btn{padding:6px 14px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;
+        border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#c8d6e5;
+        transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+.rh-btn:hover{background:rgba(255,255,255,.12);color:#fff}
+.rh-btn-accent{border-color:rgba(37,99,235,.4);background:rgba(37,99,235,.15);color:#60a5fa}
+.rh-btn-accent:hover{background:rgba(37,99,235,.25)}
+
+/* ── Three-column workspace ──────────────────────────────────────── */
+.room-workspace{display:flex;flex:1;overflow:hidden}
+
+/* ── Inner Left Rail ─────────────────────────────────────────────── */
+.room-rail{width:210px;background:#132238;flex-shrink:0;overflow-y:auto;
+           padding:14px 0;border-right:1px solid rgba(37,99,235,.1)}
+
+.rr-group{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+          color:rgba(255,255,255,.18);padding:14px 16px 5px}
+.rr-item{display:flex;align-items:center;gap:9px;padding:7px 14px;cursor:pointer;
+         font-size:11.5px;font-weight:500;color:rgba(255,255,255,.4);
+         transition:all .1s;border-left:2px solid transparent;user-select:none}
+.rr-item:hover{color:rgba(255,255,255,.75);background:rgba(255,255,255,.03)}
+.rr-item.active{color:#fff;border-left-color:#2563eb;background:rgba(37,99,235,.14)}
+.rr-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:rgba(255,255,255,.12);transition:background .2s}
+.rr-dot.complete{background:#22c55e}
+.rr-dot.partial{background:#f59e0b}
+.rr-num{font-size:9px;color:rgba(255,255,255,.2);min-width:14px}
+{% if is_admin %}
+.rr-add{padding:8px 14px;font-size:11px;color:rgba(255,255,255,.2);cursor:pointer;transition:color .12s;margin-top:6px}
+.rr-add:hover{color:rgba(255,255,255,.5)}
+{% endif %}
+
+/* ── Central Work Area ───────────────────────────────────────────── */
+.room-main{flex:1;overflow-y:auto;background:#f5f8fc;padding:0}
+
+.rm-section{display:none;padding:28px 36px 60px}
+.rm-section.active{display:block}
+
+/* Section header */
+.sec-eyebrow{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#2563eb;margin-bottom:5px}
+.sec-title-row{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+.sec-title{font-size:19px;font-weight:700;color:#0f172a;flex:1}
+.sec-edit-btn,.sec-del-btn{padding:4px 11px;border-radius:5px;font-size:10px;font-weight:600;
+                           cursor:pointer;border:1.5px solid #d6e2f0;background:#fff;color:#5b6b82;transition:all .12s}
+.sec-edit-btn:hover{border-color:#93c5fd;color:#1d4ed8}
+.sec-desc{font-size:13px;color:#5b6b82;line-height:1.6;margin-bottom:4px}
+.sec-rule{height:2px;background:linear-gradient(90deg,#2563eb 0%,transparent 50%);border-radius:1px;margin:14px 0 24px}
+
+/* Section edit form */
+.sec-edit-form{background:#fff;border:1.5px solid #d6e2f0;border-radius:10px;padding:20px;margin-bottom:18px;display:none}
+.sec-edit-form.show{display:block}
+
+/* ── Question Card ───────────────────────────────────────────────── */
+.q-card{background:#fff;border:1.5px solid #d6e2f0;border-radius:10px;
+        margin-bottom:14px;overflow:hidden;transition:box-shadow .15s,border-color .15s}
+.q-card:focus-within{box-shadow:0 0 0 2px rgba(37,99,235,.18);border-color:#93c5fd}
+.q-card.answered-card{border-left:3px solid #22c55e}
+
+.q-head{padding:13px 18px 10px;border-bottom:1px solid #eef3fa;display:flex;gap:11px;align-items:flex-start}
+.q-num{font-family:'DM Mono',monospace;font-size:11px;font-weight:600;color:#94a3b8;
+       background:#f5f8fc;border-radius:4px;padding:2px 7px;flex-shrink:0;margin-top:2px}
+.q-label-area{flex:1}
+.q-label{font-size:13px;font-weight:600;color:#0f172a;line-height:1.5}
+.q-help{font-size:11.5px;color:#5b6b82;margin-top:3px;line-height:1.5}
+.q-required-badge{display:inline-block;background:#fef3c7;color:#92400e;border-radius:3px;
+                  padding:1px 6px;font-size:9px;font-weight:700;margin-left:5px;vertical-align:middle}
+.q-internal{font-size:10px;color:#7c3aed;background:#f5f3ff;border-radius:3px;padding:2px 7px;margin-top:4px;display:inline-block}
+.q-card-actions{display:flex;gap:3px;flex-shrink:0;opacity:0;transition:opacity .15s}
+.q-card:hover .q-card-actions{opacity:1}
+.q-act-btn{padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer;
+           border:1.5px solid #d6e2f0;background:#fff;color:#5b6b82;transition:all .12s}
+.q-act-btn:hover{border-color:#93c5fd;color:#1d4ed8}
+.q-act-del{border-color:#fecaca;color:#b91c1c}
+.q-act-del:hover{background:#fee2e2}
+
+.q-body{padding:12px 18px 14px}
+
+/* ── Field types ─────────────────────────────────────────────────── */
+.q-input,.q-textarea,.q-date{width:100%;border:1.5px solid #d6e2f0;border-radius:7px;
+  padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;color:#0f172a;
+  outline:none;background:#fafcfe;transition:border-color .12s,background .12s}
+.q-input:focus,.q-textarea:focus,.q-date:focus{border-color:#2563eb;background:#fff}
+.q-textarea{resize:vertical;min-height:88px}
+.q-input::placeholder,.q-textarea::placeholder{color:#a0aec0}
+
+/* Read-only mode */
+.view-only .q-input,.view-only .q-textarea,.view-only .q-date,.view-only .q-select{
+  background:#f5f8fc;color:#374151;cursor:default;pointer-events:none;opacity:.85}
+.view-only .q-yn-btn,.view-only .q-chip,.view-only .q-opt-row,.view-only .q-risk-btn,.view-only .q-pri-btn{
+  pointer-events:none;opacity:.8}
+
+/* Options */
+.q-options{display:flex;flex-direction:column;gap:6px}
+.q-opt-row{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;border-radius:7px;
+           border:1.5px solid #d6e2f0;cursor:pointer;transition:all .12s;background:#fafcfe}
+.q-opt-row:hover{border-color:#93c5fd;background:#eaf2ff}
+.q-opt-row.selected{border-color:#22c55e;background:#f0fdf4}
+.q-opt-row input{display:none}
+.q-opt-box{width:16px;height:16px;border-radius:50%;border:2px solid #d6e2f0;flex-shrink:0;
+           margin-top:2px;transition:all .12s;position:relative}
+.q-opt-row.selected .q-opt-box{border-color:#22c55e;background:#22c55e}
+.q-opt-row.selected .q-opt-box::after{content:'';position:absolute;top:3px;left:3px;
+                                       width:6px;height:6px;border-radius:50%;background:#fff}
+.q-opt-check{border-radius:4px}
+.q-opt-row.selected .q-opt-check::after{content:'✓';position:absolute;top:-1px;left:2px;font-size:10px;color:#fff;font-weight:700}
+.q-opt-label{font-size:12.5px;color:#1e293b;line-height:1.5;flex:1}
+
+/* Yes/No */
+.q-yesno{display:flex;gap:8px}
+.q-yn-btn{padding:8px 22px;border-radius:7px;border:1.5px solid #d6e2f0;font-size:13px;
+          font-weight:600;cursor:pointer;background:#fafcfe;color:#5b6b82;transition:all .12s}
+.q-yn-btn:hover{border-color:#93c5fd;background:#eaf2ff}
+.q-yn-btn.selected-yes{border-color:#22c55e;background:#f0fdf4;color:#15803d}
+.q-yn-btn.selected-no{border-color:#fca5a5;background:#fef2f2;color:#b91c1c}
+
+/* Chips */
+.q-chips{display:flex;flex-wrap:wrap;gap:6px}
+.q-chip{padding:5px 13px;border-radius:20px;border:1.5px solid #d6e2f0;font-size:12px;
+        font-weight:500;cursor:pointer;background:#fafcfe;color:#5b6b82;transition:all .12s;user-select:none}
+.q-chip:hover{border-color:#93c5fd;color:#1d4ed8}
+.q-chip.selected{border-color:#2563eb;background:#dbeafe;color:#1d4ed8}
+
+/* Select */
+.q-select{width:100%;padding:9px 32px 9px 12px;border:1.5px solid #d6e2f0;border-radius:7px;
+          font-family:'DM Sans',sans-serif;font-size:13px;color:#0f172a;outline:none;
+          background:#fafcfe url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235b6b82' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;
+          appearance:none;transition:border-color .12s}
+.q-select:focus{border-color:#2563eb;background-color:#fff}
+
+/* Risk + priority */
+.q-risk-level,.q-priority{display:flex;gap:7px;flex-wrap:wrap}
+.q-risk-btn,.q-pri-btn{padding:7px 14px;border-radius:7px;border:1.5px solid #d6e2f0;font-size:12px;
+                       font-weight:600;cursor:pointer;background:#fafcfe;color:#5b6b82;transition:all .12s}
+.q-risk-btn[data-level="Low"].selected{border-color:#22c55e;background:#f0fdf4;color:#15803d}
+.q-risk-btn[data-level="Medium"].selected{border-color:#f59e0b;background:#fffbeb;color:#92400e}
+.q-risk-btn[data-level="High"].selected{border-color:#f97316;background:#fff7ed;color:#9a3412}
+.q-risk-btn[data-level="Critical"].selected{border-color:#dc2626;background:#fef2f2;color:#b91c1c}
+.q-pri-btn[data-priority="Must Have"].selected{border-color:#7c3aed;background:#f5f3ff;color:#7c3aed}
+.q-pri-btn[data-priority="Should Have"].selected{border-color:#2563eb;background:#eff6ff;color:#1d4ed8}
+.q-pri-btn[data-priority="Nice to Have"].selected{border-color:#94a3b8;background:#f8fafc;color:#475569}
+.q-pri-btn[data-priority="Out of Scope"].selected{border-color:#fca5a5;background:#fef2f2;color:#b91c1c}
+
+/* Question status footer */
+.q-status{display:flex;align-items:center;gap:6px;padding:7px 18px;font-size:11px;font-weight:600;
+          border-top:1px solid #eef3fa;color:#94a3b8}
+.q-stat-dot{width:6px;height:6px;border-radius:50%;background:#d6e2f0;flex-shrink:0}
+.q-status.answered{color:#22c55e}
+.q-status.answered .q-stat-dot{background:#22c55e}
+.q-save-indicator{margin-left:auto;font-size:10px;color:#94a3b8;opacity:0;transition:opacity .3s}
+.q-save-indicator.show{opacity:1}
+
+/* Add question */
+.add-q-btn{display:flex;align-items:center;gap:8px;width:100%;padding:10px 16px;
+           border:1.5px dashed #d6e2f0;border-radius:8px;background:#fafcfe;
+           color:#94a3b8;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;margin-bottom:18px}
+.add-q-btn:hover{border-color:#93c5fd;background:#eaf2ff;color:#2563eb}
+.add-q-form{background:#fff;border:1.5px solid #d6e2f0;border-radius:10px;padding:20px;margin-bottom:18px;display:none}
+.add-q-form.show{display:block}
+.aqf-title{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:14px}
+.aqf-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.aqf-label{font-size:10px;font-weight:700;color:#5b6b82;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.aqf-input{width:100%;padding:8px 12px;border:1.5px solid #d6e2f0;border-radius:7px;font-size:13px;
+           font-family:'DM Sans',sans-serif;color:#0f172a;outline:none;transition:border-color .15s}
+.aqf-input:focus{border-color:#2563eb}
+.aqf-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235b6b82' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat:no-repeat;background-position:right 10px center;padding-right:30px}
+.aqf-btns{display:flex;gap:8px;margin-top:14px}
+.aqf-save{padding:7px 16px;border-radius:7px;background:#2563eb;color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer}
+.aqf-save:hover{background:#1d4ed8}
+.aqf-cancel{padding:7px 16px;border-radius:7px;background:#fff;color:#5b6b82;border:1.5px solid #d6e2f0;font-size:12px;font-weight:600;cursor:pointer}
+.aqf-cancel:hover{border-color:#94a3b8}
+
+/* Nav buttons */
+.sec-nav-btns{display:flex;gap:10px;margin-top:32px;padding-top:18px;border-top:1px solid #d6e2f0}
+
+/* ── Right Insight Rail ─────────────────────────────────────────── */
+.room-aside{width:272px;flex-shrink:0;border-left:1px solid #e2e8f0;overflow-y:auto;background:#fff}
+
+.ra-card{border-bottom:1px solid #f1f5f9;padding:16px 18px}
+.ra-card-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:10px}
+.ra-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px}
+.ra-label{color:#5b6b82}
+.ra-val{color:#0f172a;font-weight:500}
+
+/* AI panel in aside */
+.ai-aside-card{padding:16px 18px}
+.ai-aside-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+                color:#94a3b8;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.ai-aside-title span{color:#2563eb}
+.ai-run-btn{width:100%;padding:9px;border-radius:7px;background:#0f172a;color:#fff;border:none;
+            font-size:12px;font-weight:600;cursor:pointer;transition:background .15s;
+            display:flex;align-items:center;justify-content:center;gap:6px}
+.ai-run-btn:hover{background:#1e293b}
+.ai-run-btn:disabled{background:#94a3b8;cursor:not-allowed}
+
+.ai-result-panel{margin-top:12px}
+.ai-cx-badge{padding:4px 12px;border-radius:7px;font-size:12px;font-weight:700;display:inline-block;margin-bottom:8px}
+.cx-Low{background:#dcfce7;color:#15803d}.cx-Medium{background:#fef9c3;color:#854d0e}
+.cx-High{background:#fee2e2;color:#b91c1c}.cx-Enterprise{background:#f3e8ff;color:#7c3aed}
+.ai-summary-text{font-size:11.5px;color:#374151;line-height:1.6;margin-bottom:10px}
+.ai-gap-item{display:flex;gap:6px;padding:4px 0;font-size:11px;color:#92400e}
+.ai-risk-item{display:flex;gap:6px;padding:4px 0;font-size:11px}
+
+.ai-fail-card{background:#fef2f2;border:1.5px solid #fecaca;border-radius:7px;
+              padding:12px;margin-top:10px;font-size:11px;color:#b91c1c}
+
+/* Buttons */
+.btn{padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;
+     border:none;transition:all .2s;display:inline-flex;align-items:center;gap:5px;text-decoration:none;white-space:nowrap}
+.btn-primary{background:#2563eb;color:#fff}
+.btn-primary:hover{background:#1d4ed8}
+.btn-secondary{background:#fff;color:#5b6b82;border:1.5px solid #d6e2f0}
+.btn-secondary:hover{border-color:#93c5fd;color:#1d4ed8}
+.btn-danger{background:#fef2f2;color:#b91c1c;border:1.5px solid #fecaca}
+.btn-danger:hover{background:#fee2e2}
+
+.aside-status-sel{width:100%;padding:6px 10px;border:1.5px solid #d6e2f0;border-radius:6px;
+                  font-size:11px;font-weight:600;background:#fff;outline:none;cursor:pointer}
+.aside-status-sel:focus{border-color:#2563eb}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:#0d1117;color:#f1f5f9;padding:10px 18px;
+       border-radius:8px;font-size:12px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.3);
+       transform:translateY(80px);opacity:0;transition:all .3s;z-index:999;
+       display:flex;align-items:center;gap:6px}
+.toast.show{transform:translateY(0);opacity:1}
+
+.spin{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);
+      border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+@media(max-width:1100px){
+  .room-aside{display:none}
+  .room-rail{width:170px}
+}
+@media(max-width:800px){
+  .room-rail{display:none}
+  .room-header{flex-direction:column;align-items:flex-start}
+}
+</style>
+{% endblock %}
+
+{% block sidebar %}
+  {% set active_nav = 'specs' %}
+  {% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block topbar %}
+{# Intentionally minimal — the room header replaces the topbar visually #}
+<div class="topbar-title" style="min-width:0;flex:1">
+  <h1 style="font-size:15px"><a href="/studio/rooms" style="color:#64748b;text-decoration:none">Meeting Rooms</a> / {{ spec.title }}</h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="room {% if not is_admin %}view-only{% endif %}">
+
+  <!-- ══════ ROOM HEADER ══════ -->
+  <div class="room-header">
+    <div class="rh-identity">
+      {% if is_admin %}
+      <input class="rh-title" id="specTitleInput" type="text" value="{{ spec.title }}" maxlength="120" autocomplete="off"
+             style="background:transparent;border:none;outline:none;font-size:17px;font-weight:700;color:#f1f5f9;
+                    width:100%;padding:0;font-family:'DM Sans',sans-serif">
+      {% else %}
+      <div class="rh-title">{{ spec.title }}</div>
+      {% endif %}
+      <div class="rh-sub">
+        <span>Client Meet Room</span>
+        {% if spec.client_name %}<span>{{ spec.client_name }}</span>{% endif %}
+        {% if linked_quote %}
+        <a href="/ops/quotes/{{ linked_quote.ref }}">{{ linked_quote.ref }}</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="rh-badges">
+      {% if is_admin %}
+      <span class="rh-badge badge-mode-admin">Admin Editing</span>
+      {% else %}
+      <span class="rh-badge badge-mode-client">Client View Only</span>
+      {% endif %}
+      <span class="rh-badge badge-status badge-status-{{ spec.status }}">{{ spec.status.replace('_',' ').title() }}</span>
+    </div>
+
+    <div class="rh-progress">
+      <div class="rh-prog-bar">
+        <div class="rh-prog-fill" id="mainProgFill" style="width:{{ pct }}%"></div>
+      </div>
+      <span class="rh-prog-label" id="mainProgLabel">{{ answered_q }}/{{ total_q }}</span>
+    </div>
+
+    <div class="rh-actions">
+      <a href="/studio/specs/{{ spec.id }}/export" target="_blank" class="rh-btn">Export</a>
+      {% if is_admin %}
+      <button class="rh-btn rh-btn-accent" onclick="runAnalysis()" id="analyseBtn">✦ Analyse</button>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ══════ WORKSPACE ══════ -->
+  <div class="room-workspace">
+
+    <!-- ── Inner Left Rail ──────────────────────────────────────────── -->
+    <nav class="room-rail" id="specNav">
+      <div class="rr-group">Sections</div>
+      {% for sec in sections %}
+      <div class="rr-item {% if loop.first %}active{% endif %}"
+           id="nav-{{ sec.id }}"
+           onclick="gotoSection({{ sec.id }})"
+           data-section-id="{{ sec.id }}">
+        <div class="rr-dot {% if completion[sec.id].status == 'complete' %}complete{% elif completion[sec.id].status == 'partial' %}partial{% else %}empty{% endif %}"
+             id="dot-{{ sec.id }}"></div>
+        <span class="rr-num">{{ '%02d'|format(loop.index) }}</span>
+        <span>{{ sec.title }}</span>
+      </div>
+      {% endfor %}
+      {% if is_admin %}
+      <div class="rr-add" onclick="showAddSectionForm()">+ Add Section</div>
+      {% endif %}
+    </nav>
+
+    <!-- ── Central Work Area ─────────────────────────────────────────── -->
+    <main class="room-main" id="specMain">
+
+      {# Add Section Form (admin only, hidden) #}
+      {% if is_admin %}
+      <div id="addSecForm" style="display:none;padding:24px 36px 0">
+        <div class="add-q-form show" style="max-width:600px">
+          <div class="aqf-title">New Section</div>
+          <div class="aqf-label">Section Title *</div>
+          <input class="aqf-input" id="newSecTitle" type="text" placeholder="e.g. Technical Architecture">
+          <div class="aqf-label" style="margin-top:10px">Description (optional)</div>
+          <input class="aqf-input" id="newSecDesc" type="text" placeholder="Brief description of what this section covers">
+          <div class="aqf-btns">
+            <button class="aqf-save" onclick="addSection()">Add Section</button>
+            <button class="aqf-cancel" onclick="hideAddSectionForm()">Cancel</button>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      {% for sec in sections %}
+      <div class="rm-section {% if loop.first %}active{% endif %}"
+           id="sec-{{ sec.id }}"
+           data-section-id="{{ sec.id }}">
+
+        {# Section edit form (admin only) #}
+        {% if is_admin %}
+        <div class="sec-edit-form" id="sec-edit-{{ sec.id }}">
+          <div class="aqf-title">Edit Section</div>
+          <div class="aqf-label">Title *</div>
+          <input class="aqf-input" id="sec-title-{{ sec.id }}" type="text" value="{{ sec.title }}">
+          <div class="aqf-label" style="margin-top:10px">Description</div>
+          <input class="aqf-input" id="sec-desc-{{ sec.id }}" type="text" value="{{ sec.description or '' }}">
+          <div class="aqf-btns">
+            <button class="aqf-save" onclick="updateSection({{ sec.id }})">Save</button>
+            <button class="aqf-cancel" onclick="document.getElementById('sec-edit-{{ sec.id }}').classList.remove('show')">Cancel</button>
+            <button style="margin-left:auto" class="btn btn-danger"
+                    onclick="deleteSection({{ sec.id }}, '{{ sec.title|replace("'","") }}')">Delete Section</button>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Section header -->
+        <div class="sec-eyebrow">Section {{ '%02d'|format(loop.index) }}</div>
+        <div class="sec-title-row">
+          <div class="sec-title">{{ sec.title }}</div>
+          {% if is_admin %}
+          <button class="sec-edit-btn" onclick="document.getElementById('sec-edit-{{ sec.id }}').classList.toggle('show')">Edit</button>
+          {% endif %}
+        </div>
+        {% if sec.description %}
+        <div class="sec-desc">{{ sec.description }}</div>
+        {% endif %}
+        <div class="sec-rule"></div>
+
+        <!-- Questions -->
+        {% set qs = q_by_section.get(sec.id, []) %}
+        {% for q in qs %}
+        {% set ans = answers.get(q.id, {}) %}
+        {% set ans_text = ans.get('answer_text', '') %}
+        {% set ans_json = ans.get('answer_json_parsed', []) %}
+        {% set is_answered = ans_text or ans_json %}
+
+        <div class="q-card {% if is_answered %}answered-card{% endif %}"
+             id="qcard-{{ q.id }}"
+             data-question-id="{{ q.id }}"
+             data-section-id="{{ sec.id }}">
+
+          <div class="q-head">
+            <div class="q-num">{{ loop.index }}</div>
+            <div class="q-label-area">
+              <div class="q-label">
+                {{ q.label }}
+                {% if q.required %}<span class="q-required-badge">Required</span>{% endif %}
+              </div>
+              {% if q.help_text %}<div class="q-help">{{ q.help_text }}</div>{% endif %}
+              {% if q.internal_note and is_admin %}<div class="q-internal">{{ q.internal_note }}</div>{% endif %}
+            </div>
+            {% if is_admin %}
+            <div class="q-card-actions">
+              <button class="q-act-btn" onclick="showEditQuestion({{ q.id }})">Edit</button>
+              <button class="q-act-btn q-act-del"
+                      onclick="deleteQuestion({{ q.id }}, '{{ q.label|replace("'","") }}')">×</button>
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="q-body">
+            {# ── TEXT ── #}
+            {% if q.field_type == 'text' %}
+            <input class="q-input" type="text" data-qid="{{ q.id }}" data-type="text"
+                   value="{{ ans_text }}" placeholder="{{ q.placeholder or '' }}"
+                   {% if not is_admin %}disabled{% endif %}>
+
+            {# ── TEXTAREA ── #}
+            {% elif q.field_type == 'textarea' %}
+            <textarea class="q-textarea" data-qid="{{ q.id }}" data-type="textarea"
+                      placeholder="{{ q.placeholder or 'Enter your answer...' }}"
+                      {% if not is_admin %}disabled{% endif %}>{{ ans_text }}</textarea>
+
+            {# ── DATE ── #}
+            {% elif q.field_type == 'date' %}
+            <input class="q-date" type="date" data-qid="{{ q.id }}" data-type="text"
+                   value="{{ ans_text }}" {% if not is_admin %}disabled{% endif %}>
+
+            {# ── YES/NO ── #}
+            {% elif q.field_type == 'yes_no' %}
+            <div class="q-yesno">
+              <button class="q-yn-btn {% if ans_text == 'Yes' %}selected-yes{% endif %}"
+                      data-qid="{{ q.id }}" data-value="Yes" onclick="selectYesNo(this)">Yes</button>
+              <button class="q-yn-btn {% if ans_text == 'No' %}selected-no{% endif %}"
+                      data-qid="{{ q.id }}" data-value="No" onclick="selectYesNo(this)">No</button>
+              <button class="q-yn-btn {% if ans_text == 'TBC' %}selected{% endif %}"
+                      data-qid="{{ q.id }}" data-value="TBC" onclick="selectYesNo(this)"
+                      style="{% if ans_text == 'TBC' %}border-color:#94a3b8;background:#f8fafc{% endif %}">TBC</button>
+            </div>
+
+            {# ── RADIO ── #}
+            {% elif q.field_type == 'radio' %}
+            <div class="q-options">
+              {% for opt in q.options %}
+              <label class="q-opt-row {% if ans_text == opt %}selected{% endif %}"
+                     onclick="selectRadio(this, {{ q.id }})">
+                <div class="q-opt-box"></div>
+                <div class="q-opt-label">{{ opt }}</div>
+              </label>
+              {% endfor %}
+            </div>
+
+            {# ── CHECKBOX ── #}
+            {% elif q.field_type == 'checkbox' %}
+            <div class="q-options">
+              {% for opt in q.options %}
+              <label class="q-opt-row {% if opt in ans_json %}selected{% endif %}"
+                     onclick="toggleCheckbox(this, {{ q.id }}, '{{ opt|replace("'","") }}')">
+                <div class="q-opt-box q-opt-check"></div>
+                <div class="q-opt-label">{{ opt }}</div>
+              </label>
+              {% endfor %}
+            </div>
+
+            {# ── SELECT ── #}
+            {% elif q.field_type == 'select' %}
+            <select class="q-select" data-qid="{{ q.id }}" data-type="text"
+                    onchange="saveAnswer({{ q.id }}, this.value, [])"
+                    {% if not is_admin %}disabled{% endif %}>
+              <option value="">— Select —</option>
+              {% for opt in q.options %}
+              <option value="{{ opt }}" {% if ans_text == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+
+            {# ── CHIPS ── #}
+            {% elif q.field_type == 'chips' %}
+            <div class="q-chips" data-qid="{{ q.id }}" id="chips-{{ q.id }}">
+              {% for opt in q.options %}
+              <div class="q-chip {% if opt in ans_json %}selected{% endif %}"
+                   data-value="{{ opt }}"
+                   onclick="toggleChip(this, {{ q.id }})">{{ opt }}</div>
+              {% endfor %}
+            </div>
+
+            {# ── RISK LEVEL ── #}
+            {% elif q.field_type == 'risk_level' %}
+            <div class="q-risk-level">
+              {% for level in ['Low', 'Medium', 'High', 'Critical'] %}
+              <button class="q-risk-btn {% if ans_text == level %}selected{% endif %}"
+                      data-level="{{ level }}" data-qid="{{ q.id }}"
+                      onclick="selectRisk(this)">{{ level }}</button>
+              {% endfor %}
+            </div>
+
+            {# ── PRIORITY ── #}
+            {% elif q.field_type == 'priority' %}
+            <div class="q-priority">
+              {% for pri in ['Must Have', 'Should Have', 'Nice to Have', 'Out of Scope'] %}
+              <button class="q-pri-btn {% if ans_text == pri %}selected{% endif %}"
+                      data-priority="{{ pri }}" data-qid="{{ q.id }}"
+                      onclick="selectPriority(this)">{{ pri }}</button>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="q-status {% if is_answered %}answered{% endif %}" id="qs-{{ q.id }}">
+            <div class="q-stat-dot"></div>
+            <span id="qs-label-{{ q.id }}">{% if is_answered %}Answered{% else %}Not answered{% endif %}</span>
+            <span class="q-save-indicator" id="save-ind-{{ q.id }}">Saved</span>
+          </div>
+        </div>
+        {% endfor %}{# end questions #}
+
+        {# Add question (admin only) #}
+        {% if is_admin %}
+        <div class="add-q-form" id="add-q-form-{{ sec.id }}">
+          <div class="aqf-title">Add Question to "{{ sec.title }}"</div>
+          <div class="aqf-label">Question label *</div>
+          <input class="aqf-input" id="new-q-label-{{ sec.id }}" type="text"
+                 placeholder="e.g. What data should be exported?">
+          <div class="aqf-row" style="margin-top:10px">
+            <div>
+              <div class="aqf-label">Field type</div>
+              <select class="aqf-input aqf-select" id="new-q-type-{{ sec.id }}">
+                <option value="textarea">Textarea</option><option value="text">Text</option>
+                <option value="radio">Radio</option><option value="checkbox">Checkbox</option>
+                <option value="chips">Chips</option><option value="select">Select</option>
+                <option value="yes_no">Yes/No</option><option value="date">Date</option>
+                <option value="risk_level">Risk level</option><option value="priority">Priority</option>
+              </select>
+            </div>
+            <div>
+              <div class="aqf-label">Help text (optional)</div>
+              <input class="aqf-input" id="new-q-help-{{ sec.id }}" type="text" placeholder="Guidance text">
+            </div>
+          </div>
+          <div id="new-q-options-wrap-{{ sec.id }}" style="display:none;margin-top:10px">
+            <div class="aqf-label">Options (one per line)</div>
+            <textarea class="aqf-input" id="new-q-options-{{ sec.id }}" placeholder="Option A&#10;Option B" rows="4"></textarea>
+          </div>
+          <div class="aqf-btns">
+            <button class="aqf-save" onclick="addQuestion({{ sec.id }})">Add Question</button>
+            <button class="aqf-cancel"
+                    onclick="document.getElementById('add-q-form-{{ sec.id }}').classList.remove('show')">Cancel</button>
+          </div>
+        </div>
+
+        <button class="add-q-btn"
+                onclick="document.getElementById('add-q-form-{{ sec.id }}').classList.toggle('show')">
+          + Add Question
+        </button>
+        {% endif %}
+
+        <!-- Nav buttons -->
+        <div class="sec-nav-btns">
+          {% if not loop.first %}
+          <button class="btn btn-secondary" onclick="gotoSection({{ sections[loop.index-2].id }})">← Previous</button>
+          {% endif %}
+          {% if not loop.last %}
+          <button class="btn btn-primary" onclick="gotoSection({{ sections[loop.index].id }})">Next →</button>
+          {% endif %}
+        </div>
+
+      </div>{# end section #}
+      {% endfor %}
+
+    </main>
+
+    <!-- ── Right Insight Rail ────────────────────────────────────────── -->
+    <aside class="room-aside">
+
+      <!-- Room info -->
+      <div class="ra-card">
+        <div class="ra-card-title">Room Info</div>
+        {% if is_admin %}
+        <div class="ra-row">
+          <span class="ra-label">Status</span>
+          <select class="aside-status-sel" id="statusSelect" onchange="updateStatus(this.value)">
+            <option value="draft" {% if spec.status=='draft' %}selected{% endif %}>Draft</option>
+            <option value="in_review" {% if spec.status=='in_review' %}selected{% endif %}>In Clarification</option>
+            <option value="final" {% if spec.status=='final' %}selected{% endif %}>Scoped</option>
+            <option value="archived" {% if spec.status=='archived' %}selected{% endif %}>Delivered</option>
+          </select>
+        </div>
+        {% else %}
+        <div class="ra-row"><span class="ra-label">Status</span><span class="ra-val">{{ spec.status.replace('_',' ').title() }}</span></div>
+        {% endif %}
+        {% if spec.client_name %}
+        <div class="ra-row"><span class="ra-label">Client</span><span class="ra-val">{{ spec.client_name }}</span></div>
+        {% endif %}
+        {% if spec.project_type %}
+        <div class="ra-row"><span class="ra-label">Type</span><span class="ra-val">{{ spec.project_type }}</span></div>
+        {% endif %}
+        {% if linked_quote %}
+        <div class="ra-row"><span class="ra-label">Quote</span><a href="/ops/quotes/{{ linked_quote.ref }}" style="font-size:12px;color:#2563eb">{{ linked_quote.ref }}</a></div>
+        {% endif %}
+        <div class="ra-row"><span class="ra-label">Sections</span><span class="ra-val">{{ sections|length }}</span></div>
+        <div class="ra-row"><span class="ra-label">Questions</span><span class="ra-val" id="asideTotalQ">{{ total_q }}</span></div>
+        <div class="ra-row"><span class="ra-label">Answered</span><span class="ra-val" id="asideAnsweredQ">{{ answered_q }}</span></div>
+      </div>
+
+      <!-- AI Analysis -->
+      <div class="ai-aside-card">
+        <div class="ai-aside-title"><span>✦</span> AI Analysis</div>
+
+        {% if latest_ai and latest_ai.output %}
+        {% set ai = latest_ai.output %}
+        <div class="ai-result-panel" id="aiResultPanel">
+          {% set cx = ai.get('complexity_score','') %}
+          {% if cx %}
+          <span class="ai-cx-badge cx-{{ cx }}">{{ cx }}{% if ai.get('estimated_weeks') %} · ~{{ ai.estimated_weeks }}w{% endif %}</span>
+          {% endif %}
+
+          {% if ai.get('executive_summary') %}
+          <div class="ai-summary-text">{{ ai.executive_summary }}</div>
+          {% endif %}
+
+          {% if ai.get('gaps_found') %}
+          <div class="ra-card-title" style="margin-bottom:4px;margin-top:8px">Gaps</div>
+          <div style="background:#fffbeb;border-radius:6px;padding:6px 8px;margin-bottom:8px">
+            {% for gap in ai.gaps_found[:3] %}
+            <div class="ai-gap-item">▲ {{ gap }}</div>
+            {% endfor %}
+            {% if ai.gaps_found|length > 3 %}
+            <div style="font-size:10px;color:#92400e;margin-top:3px">+{{ ai.gaps_found|length - 3 }} more</div>
+            {% endif %}
+          </div>
+          {% endif %}
+
+          {% if ai.get('risks') %}
+          <div class="ra-card-title" style="margin-bottom:4px">Risks</div>
+          {% for r in ai.risks[:3] %}
+          {% set severity = r.severity if r is mapping else 'Medium' %}
+          {% set risk_text = r.risk if r is mapping else r %}
+          <div class="ai-risk-item">
+            <span style="font-size:9px;padding:1px 5px;border-radius:3px;flex-shrink:0;
+              {% if severity=='Critical' %}background:#fef2f2;color:#b91c1c
+              {% elif severity=='High' %}background:#fff7ed;color:#9a3412
+              {% else %}background:#fef3c7;color:#92400e{% endif %}">{{ severity }}</span>
+            <span style="font-size:11px;color:#374151">{{ risk_text }}</span>
+          </div>
+          {% endfor %}
+          {% endif %}
+
+          <div style="font-size:9px;color:#94a3b8;margin-top:8px">
+            {{ latest_ai.provider }} · {{ latest_ai.created_at[:16] if latest_ai.created_at else '' }}
+          </div>
+          {% if is_admin %}
+          <button class="ai-run-btn" style="margin-top:8px" onclick="runAnalysis()" id="analyseBtn2">
+            ↻ Re-run
+          </button>
+          {% endif %}
+        </div>
+        {% else %}
+        <p style="font-size:11px;color:#5b6b82;line-height:1.5;margin-bottom:12px">
+          Run AI analysis for complexity scoring, gap detection, and risk flagging.
+        </p>
+        {% if is_admin %}
+        <button class="ai-run-btn" onclick="runAnalysis()" id="analyseBtn2">✦ Run Analysis</button>
+        {% endif %}
+        <div id="aiResultPanel" style="margin-top:10px"></div>
+        {% endif %}
+
+        <div class="ai-fail-card" id="aiFailCard" style="display:none">
+          <strong>AI analysis failed</strong><br>
+          <span id="aiFailMsg"></span>
+        </div>
+      </div>
+
+      <!-- Export -->
+      <div class="ra-card">
+        <div class="ra-card-title">Export</div>
+        <a href="/studio/specs/{{ spec.id }}/export" target="_blank"
+           class="btn btn-secondary" style="width:100%;justify-content:center;margin-bottom:6px;font-size:11px">
+          Export HTML
+        </a>
+        <button class="btn btn-secondary" style="width:100%;justify-content:center;font-size:11px"
+                onclick="window.open('/studio/specs/{{ spec.id }}/export','_blank')">
+          Print / PDF
+        </button>
+      </div>
+
+      {% if is_admin %}
+      <!-- Delete -->
+      <div class="ra-card">
+        <button class="btn btn-danger" style="width:100%;justify-content:center;font-size:11px"
+                onclick="deleteSpec()">Delete Room</button>
+      </div>
+      {% endif %}
+
+    </aside>
+  </div>{# end workspace #}
+</div>{# end room #}
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="{{ url_for('static', filename='js/dx/spec_builder.js') }}"></script>
+<script>
+const SPEC_ID = {{ spec.id }};
+const SPEC_SECTIONS = {{ sections | tojson }};
+const COMPLETION = {{ completion | tojson }};
+const TOTAL_Q = {{ total_q }};
+const ANSWERED_Q = {{ answered_q }};
+const IS_ADMIN = {{ 'true' if is_admin else 'false' }};
+
+document.addEventListener('DOMContentLoaded', function() {
+  initSpecBuilder();
+  document.querySelectorAll('[id^="new-q-type-"]').forEach(sel => {
+    sel.addEventListener('change', function() {
+      const secId = sel.id.replace('new-q-type-', '');
+      const wrap = document.getElementById('new-q-options-wrap-' + secId);
+      if (wrap) wrap.style.display = ['radio','checkbox','select','chips'].includes(sel.value) ? 'block' : 'none';
+    });
+  });
+});
+</script>
+{% endblock %}

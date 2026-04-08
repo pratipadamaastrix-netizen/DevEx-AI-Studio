@@ -1,0 +1,13 @@
+<!-- Topbar -->
+<div class="topbar-title">
+    <h1>{{ page_title }}</h1>
+    <p>{{ page_subtitle }}</p>
+</div>
+
+<div class="topbar-actions">
+    {% block topbar_actions %}
+    <a href="/artefacts/new" class="btn btn-primary">
+        + New Report
+    </a>
+    {% endblock %}
+</div>

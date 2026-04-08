@@ -1,0 +1,102 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}{{ page_title }} - Facilities Management{% endblock %}
+
+{% block sidebar %}
+    {% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-title">
+    <h1>{{ page_title }}</h1>
+    <p>{{ services|length }} service{{ 's' if services|length != 1 else '' }}</p>
+</div>
+<div class="topbar-actions">
+    <a href="/databases/services/new" class="btn btn-primary">+ Add Service</a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    {% if services %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Service Name</th>
+                <th>Description</th>
+                <th>Unit Price</th>
+                <th>Unit Type</th>
+                <th>Status</th>
+                <th>Created</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for service in services %}
+            <tr>
+                <td><strong>{{ service.name }}</strong></td>
+                <td>{{ service.description or '-' }}</td>
+                <td>£{{ service.unit_price or '0.00' }}</td>
+                <td>{{ service.unit_type }}</td>
+                <td>
+                    {% if service.active %}
+                    <span class="status-badge status-active">Active</span>
+                    {% else %}
+                    <span class="status-badge status-inactive">Inactive</span>
+                    {% endif %}
+                </td>
+                <td>{{ service.created_at[:10] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <h3>No Services Yet</h3>
+        <p>Add your first service offering to get started</p>
+        <a href="/databases/services/new" class="btn btn-primary">+ Add Service</a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.data-table {
+    width: 100%;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.data-table thead {
+    background: var(--navy);
+    color: white;
+}
+
+.data-table th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.data-table td {
+    padding: 15px;
+    border-top: 1px solid #e5e7eb;
+    font-size: 14px;
+}
+
+.data-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.status-active {
+    background: #10b981;
+    color: white;
+}
+
+.status-inactive {
+    background: #6b7280;
+    color: white;
+}
+</style>
+{% endblock %}

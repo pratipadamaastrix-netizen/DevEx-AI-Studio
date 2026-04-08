@@ -1,0 +1,142 @@
+<style>
+.card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+}
+
+.card-header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1.3;
+}
+
+.card-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.4;
+}
+
+.card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.status-pill {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-pill.draft {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.status-pill.sent {
+    background: #fed7aa;
+    color: #c2410c;
+}
+
+.status-pill.priced {
+    background: #cffafe;
+    color: #0e7490;
+}
+
+.status-pill.client {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.status-pill.approved {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.card-date {
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+.actions {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-small {
+    padding: 6px 12px;
+    font-size: 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.2s;
+}
+
+.btn-open { background: var(--orange); color: white; }
+.btn-open:hover { background: #ea580c; }
+.btn-pdf { background: #10b981; color: white; }
+.btn-pdf:hover { background: #059669; }
+.btn-client { background: #3b82f6; color: white; }
+.btn-client:hover { background: #2563eb; }
+.btn-delete { background: #ef4444; color: white; }
+.btn-delete:hover { background: #dc2626; }
+</style>
+
+{% set status_map = {
+    'Draft': 'draft',
+    'Sent to Contractor': 'sent',
+    'Priced': 'priced',
+    'Sent to Client': 'client',
+    'Approved': 'approved'
+} %}
+
+{% set status = report.workflow_status or report.status or 'Draft' %}
+{% set status_class = status_map.get(status, 'draft') %}
+
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">{{ report.site_name or report.report_title }}</div>
+        <div class="card-subtitle">{{ report.report_title }}</div>
+    </div>
+    
+    <div class="card-footer">
+        <span class="status-pill {{ status_class }}">{{ status }}</span>
+        <span class="card-date">{{ report.inspection_date }}</span>
+    </div>
+    
+    <div class="actions">
+        <a href="/fire-door/report/{{ report.id }}" class="btn-small btn-open">Open</a>
+        <a href="/api/export/{{ report.id }}/contractor" target="_blank" class="btn-small btn-pdf">Contractor PDF</a>
+        <a href="/api/export/{{ report.id }}/client" target="_blank" class="btn-small btn-client">Client PDF</a>
+        <button class="btn-small btn-delete" onclick="deleteReport({{ report.id }})">Delete</button>
+    </div>
+</div>

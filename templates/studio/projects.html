@@ -1,0 +1,66 @@
+{% extends 'layouts/app.html' %}
+
+{% block title %}Active Projects — Devex AI Studios{% endblock %}
+
+{% block sidebar %}
+    {% set active_nav = 'projects' %}
+    {% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-title">
+    <h1>Active Projects</h1>
+    <p>Quotes in review, scoped, sent, or won stages</p>
+</div>
+<div class="topbar-actions">
+    <a href="/studio/quotes" class="dx-btn dx-btn-secondary">All Quotes</a>
+    <a href="/quote" target="_blank" class="dx-btn dx-btn-primary">+ New Quote</a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="dx-card">
+    {% if projects %}
+    <table class="dx-table">
+        <thead>
+            <tr>
+                <th>Reference</th>
+                <th>Client</th>
+                <th>Project</th>
+                <th>Type</th>
+                <th>Complexity</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in projects %}
+            <tr>
+                <td><a href="/studio/quotes/{{ p.ref }}">{{ p.ref }}</a></td>
+                <td>{{ p.contact_name or '—' }}</td>
+                <td>{{ p.project_name or '—' }}</td>
+                <td>{{ p.project_type or '—' }}</td>
+                <td>
+                    {% if p.complexity_score %}
+                    <span class="dx-badge dx-badge-{{ 'success' if p.complexity_score == 'Low' else ('warning' if p.complexity_score == 'Medium' else 'danger') }}">
+                        {{ p.complexity_score }}
+                    </span>
+                    {% else %}—{% endif %}
+                </td>
+                <td><span class="dx-badge dx-badge-{{ p.status|lower }}">{{ p.status }}</span></td>
+                <td style="color:#94A3B8;font-size:12px;">{{ p.created_at[:10] if p.created_at else '—' }}</td>
+                <td><a href="/studio/quotes/{{ p.ref }}" class="dx-btn dx-btn-secondary dx-btn-sm">View</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="dx-empty">
+        <div class="dx-empty-icon">📂</div>
+        <div class="dx-empty-title">No active projects</div>
+        <div class="dx-empty-sub">Quotes in Reviewing, Scoped, Sent, or Won status will appear here.</div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

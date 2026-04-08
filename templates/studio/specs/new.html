@@ -1,0 +1,125 @@
+{% extends "layouts/app.html" %}
+{% block title %}New Spec — Devex AI Studios{% endblock %}
+
+{% block extra_styles %}
+<style>
+.new-spec-shell{max-width:680px;margin:0 auto;padding:40px 0}
+.ns-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:36px}
+.ns-title{font-size:22px;font-weight:700;color:#0f172a;margin-bottom:6px}
+.ns-sub{font-size:14px;color:#64748b;margin-bottom:32px}
+.ns-rule{height:1px;background:#f1f5f9;margin-bottom:28px}
+
+.form-group{margin-bottom:20px}
+.form-label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:7px}
+.form-label span{color:#94a3b8;font-weight:400;margin-left:4px}
+.form-input{width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:8px;
+            font-size:14px;font-family:'DM Sans',sans-serif;color:#0f172a;
+            background:#fff;outline:none;transition:border-color .15s}
+.form-input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+textarea.form-input{resize:vertical;min-height:80px}
+.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+             background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+.linked-quote-badge{background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:8px;
+                    padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:12px}
+.lqb-ref{font-family:monospace;font-size:12px;font-weight:700;color:#1d4ed8}
+.lqb-name{font-size:13px;color:#1e40af;font-weight:500}
+
+.btn{padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;
+     border:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.btn-primary{background:#2563eb;color:#fff}
+.btn-primary:hover{background:#1d4ed8}
+.btn-secondary{background:#fff;color:#374151;border:1.5px solid #e2e8f0}
+.btn-secondary:hover{border-color:#94a3b8}
+.btn-row{display:flex;gap:12px;margin-top:28px}
+</style>
+{% endblock %}
+
+{% block sidebar %}
+  {% set active_nav = 'specs' %}
+  {% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-title">
+  <h1>New Spec</h1>
+  <p><a href="/studio/specs" style="color:#64748b;text-decoration:none">← Spec Scope Builder</a></p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="new-spec-shell">
+  <div class="ns-card">
+    <div class="ns-title">Create Scope Document</div>
+    <div class="ns-sub">A new spec is pre-loaded with 15 sections and ~70 software scoping questions. You can add, remove, or edit any of them.</div>
+    <div class="ns-rule"></div>
+
+    {% if quote %}
+    <div class="linked-quote-badge">
+      <span style="font-size:22px">🔗</span>
+      <div>
+        <div class="lqb-ref">{{ quote.ref }}</div>
+        <div class="lqb-name">{{ quote.project_name or 'Unnamed Project' }} — {{ quote.contact_name }}</div>
+      </div>
+    </div>
+    {% endif %}
+
+    <form method="POST" action="/studio/specs/new">
+
+      <div class="form-group">
+        <label class="form-label" for="title">Spec Title <span>*</span></label>
+        <input class="form-input" type="text" id="title" name="title" required
+               placeholder="e.g. ClientCo Customer Portal — Full Scope"
+               value="{{ quote.project_name ~ ' — Scope' if quote else '' }}">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="client_name">Client / Company Name</label>
+          <input class="form-input" type="text" id="client_name" name="client_name"
+                 placeholder="Company Ltd"
+                 value="{{ quote.company_name or quote.contact_name if quote else '' }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="project_type">Project Type</label>
+          <select class="form-input form-select" id="project_type" name="project_type">
+            <option value="">— Select —</option>
+            {% set types = [('website','Website'), ('web_app','Web Application'),
+                            ('mobile_app','Mobile App'), ('ecommerce','eCommerce'),
+                            ('portal','Client Portal'), ('both','Web + Mobile'),
+                            ('saas','SaaS Platform'), ('other','Other')] %}
+            {% for val, label in types %}
+            <option value="{{ val }}" {% if quote and quote.project_type == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="quote_ref">Link to Quote Pipeline Record <span>(optional)</span></label>
+        <select class="form-input form-select" id="quote_ref" name="quote_ref">
+          <option value="">— No linked quote —</option>
+          {% for q in quotes %}
+          <option value="{{ q.ref }}"
+            {% if (quote and quote.ref == q.ref) or (quote_ref and quote_ref == q.ref) %}selected{% endif %}>
+            {{ q.ref }} — {{ q.project_name or 'Unnamed' }} ({{ q.status }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="description">Brief Context <span>(optional)</span></label>
+        <textarea class="form-input" id="description" name="description"
+                  placeholder="One or two sentences giving context for this spec document."></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button type="submit" class="btn btn-primary">Create Spec &amp; Open Builder →</button>
+        <a href="/studio/specs" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

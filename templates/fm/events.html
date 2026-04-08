@@ -1,0 +1,134 @@
+{% extends 'layouts/app.html' %}
+
+{% block title %}FM Event Audit — FM Operations{% endblock %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/fm.css') }}">
+{% endblock %}
+
+{% block sidebar %}
+    {% set active_nav = 'fm_dashboard' %}
+    {% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-title">
+    <h1>Event Audit Log</h1>
+    <p>All inbound events received via /push/events gateway</p>
+</div>
+<div class="topbar-actions">
+    <a href="/fm/dashboard" class="btn btn-secondary">← Dashboard</a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="fm-app">
+
+    <div class="fm-topbar">
+        <div>
+            <h1>Inbound Event Audit</h1>
+            <div class="fm-meta">{{ events|length }} events shown · Sources: webchat, whatsapp, whatsapp_json, ai, gateway, system</div>
+        </div>
+        <div class="fm-topbar-right">
+            <input class="fm-input fm-search" id="ev-search" placeholder="Search event type, ref, source…" />
+            <select class="fm-select" id="ev-filter-status" onchange="filterEvents()">
+                <option value="">Status: All</option>
+                <option>processed</option>
+                <option>queued</option>
+                <option>duplicate</option>
+                <option>error</option>
+                <option>retry</option>
+            </select>
+            <select class="fm-select" id="ev-filter-source" onchange="filterEvents()">
+                <option value="">Source: All</option>
+                <option>webchat</option>
+                <option>whatsapp</option>
+                <option>whatsapp_json</option>
+                <option>ai</option>
+                <option>gateway</option>
+                <option>system</option>
+                <option>manual</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="fm-card">
+        <div class="fm-table-wrap" style="max-height:none">
+            <table class="fm-table">
+                <thead>
+                    <tr>
+                        <th>Received (UTC)</th>
+                        <th>Source</th>
+                        <th>Type</th>
+                        <th>Ticket</th>
+                        <th>Status</th>
+                        <th>Retries</th>
+                        <th class="fm-mono">eventId</th>
+                    </tr>
+                </thead>
+                <tbody id="ev-tbody">
+                    {% if events %}
+                        {% for ev in events %}
+                        <tr class="ev-row"
+                            data-source="{{ ev.source }}"
+                            data-status="{{ ev.status }}"
+                            data-text="{{ ev.event_type }} {{ ev.ticket_ref or '' }} {{ ev.source }}">
+                            <td>{{ ev.received_at[:16] }}</td>
+                            <td>{{ ev.source }}</td>
+                            <td>{{ ev.event_type }}</td>
+                            <td>
+                                {% if ev.ticket_ref %}
+                                <a href="/fm/ticket/{{ ev.ticket_ref }}"
+                                   class="fm-mono"
+                                   style="color:var(--accent);text-decoration:none">
+                                   {{ ev.ticket_ref }}
+                                </a>
+                                {% else %}—{% endif %}
+                            </td>
+                            <td>
+                                <span class="fm-badge
+                                    {%- if ev.status == 'processed' %} good
+                                    {%- elif ev.status == 'error' %} bad
+                                    {%- elif ev.status == 'duplicate' %} info
+                                    {%- else %} warn
+                                    {%- endif %}">{{ ev.status }}</span>
+                            </td>
+                            <td>{{ ev.retry_count or 0 }}</td>
+                            <td class="fm-mono" style="color:var(--muted2);font-size:11px">
+                                {{ ev.event_id[:12] }}…
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted2)">
+                            No events yet. Send a POST to /push/events to get started.
+                        </td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterEvents() {
+    const q      = document.getElementById('ev-search').value.toLowerCase();
+    const status = document.getElementById('ev-filter-status').value;
+    const source = document.getElementById('ev-filter-source').value;
+
+    document.querySelectorAll('.ev-row').forEach(row => {
+        let show = true;
+        if (q      && !row.dataset.text.includes(q))      show = false;
+        if (status && row.dataset.status !== status)       show = false;
+        if (source && row.dataset.source !== source)       show = false;
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+document.getElementById('ev-search').addEventListener('input', filterEvents);
+</script>
+{% endblock %}

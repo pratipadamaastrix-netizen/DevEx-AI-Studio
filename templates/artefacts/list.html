@@ -1,0 +1,73 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}{{ page_title }} - Facilities Management{% endblock %}
+
+{% block sidebar %}
+    {% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-title">
+    <h1>{{ page_title }}</h1>
+    <p>{{ artefacts|length }} report{{ 's' if artefacts|length != 1 else '' }}</p>
+</div>
+<div class="topbar-actions">
+    <a href="/artefacts/new" class="btn btn-primary">+ New Report</a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    {% if artefact_type %}
+    <div class="filter-bar">
+        <a href="/artefacts?type={{ artefact_type }}" class="filter-link {% if not current_status %}active{% endif %}">All</a>
+        <a href="/artefacts?type={{ artefact_type }}&status=Draft" class="filter-link {% if current_status == 'Draft' %}active{% endif %}">Draft</a>
+        <a href="/artefacts?type={{ artefact_type }}&status=In Review" class="filter-link {% if current_status == 'In Review' %}active{% endif %}">In Review</a>
+        <a href="/artefacts?type={{ artefact_type }}&status=Final" class="filter-link {% if current_status == 'Final' %}active{% endif %}">Final</a>
+    </div>
+    {% endif %}
+
+    {% if artefacts %}
+    <div class="artefacts-grid">
+        {% for artefact in artefacts %}
+        <div class="artefact-card">
+            <div class="artefact-header">
+                <h3>{{ artefact.title }}</h3>
+                <span class="status-badge status-{{ artefact.status.lower().replace(' ', '-') }}">
+                    {{ artefact.status }}
+                </span>
+            </div>
+            <div class="artefact-meta">
+                <div class="meta-item">
+                    <strong>Type:</strong>
+                    {% if artefact.artefact_type == 'engagement' %}Inspection Report
+                    {% elif artefact.artefact_type == 'incident' %}Incident Report
+                    {% elif artefact.artefact_type == 'investigation' %}Investigation
+                    {% elif artefact.artefact_type == 'assessment' %}Assessment
+                    {% else %}{{ artefact.artefact_type|title }}{% endif %}
+                </div>
+                <div class="meta-item"><strong>Created:</strong> {{ artefact.created_at[:10] }}</div>
+                <div class="meta-item"><strong>Updated:</strong> {{ artefact.updated_at[:10] }}</div>
+                {% if artefact.created_by %}
+                <div class="meta-item"><strong>By:</strong> {{ artefact.created_by }}</div>
+                {% endif %}
+            </div>
+            <div class="artefact-actions">
+                <a href="/artefacts/{{ artefact.id }}" class="btn btn-secondary btn-sm">View</a>
+                <a href="/artefacts/{{ artefact.id }}/edit" class="btn btn-primary btn-sm">Edit</a>
+                <a href="/artefacts/{{ artefact.id }}/versions" class="btn btn-secondary btn-sm">Versions</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>No {{ page_title }} Yet</h3>
+        <p>Create your first report to get started</p>
+        <a href="/artefacts/new" class="btn btn-primary">+ New Report</a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,128 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Dashboard - Facilities Management{% endblock %}
+
+{% block sidebar %}
+    {% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-title">
+    <h1>Dashboard</h1>
+    <p>Facilities Management Overview</p>
+</div>
+<div class="topbar-actions">
+    <a href="/fm/dashboard" class="btn btn-primary">+ New Ticket</a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="fm-overview-dashboard" style="padding: 0;">
+
+    <!-- KPI row pulled live from FM API -->
+    <div class="dashboard-grid" id="fm-kpi-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
+        <div class="stat-card"><div class="stat-value" id="kpi-total">—</div><div class="stat-label">Total Tickets</div></div>
+        <div class="stat-card"><div class="stat-value" id="kpi-open" style="color:#2563eb">—</div><div class="stat-label">Open</div></div>
+        <div class="stat-card"><div class="stat-value" id="kpi-urgent" style="color:#dc2626">—</div><div class="stat-label">Urgent</div></div>
+        <div class="stat-card"><div class="stat-value" id="kpi-triage" style="color:#d97706">—</div><div class="stat-label">Pending Triage</div></div>
+    </div>
+
+    <!-- Recent activity -->
+    <div style="background:#fff;border:1px solid #e4e8ef;border-radius:12px;padding:24px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <h2 style="font-size:15px;font-weight:600;color:#1a2130;margin:0;">Recent Tickets</h2>
+            <a href="/fm/dashboard" style="font-size:13px;color:#2563eb;text-decoration:none;font-weight:500;">View all →</a>
+        </div>
+        <div id="recent-tickets-list">
+            <p style="color:#8896aa;font-size:13px;text-align:center;padding:32px 0;">Loading...</p>
+        </div>
+    </div>
+
+    <!-- Section shortcuts -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px;">
+        <a href="/fm/dashboard" style="text-decoration:none;">
+            <div style="background:#fff;border:1px solid #e4e8ef;border-radius:12px;padding:20px;transition:box-shadow .15s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,.08)'" onmouseout="this.style.boxShadow='none'">
+                <div style="font-size:24px;margin-bottom:10px;"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon" style="color:#2563eb"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2z"></path></svg></div>
+                <div style="font-weight:600;color:#1a2130;font-size:14px;">FM Console</div>
+                <div style="color:#8896aa;font-size:12px;margin-top:4px;">Manage tickets and triage</div>
+            </div>
+        </a>
+        <a href="/wa/monitor" style="text-decoration:none;">
+            <div style="background:#fff;border:1px solid #e4e8ef;border-radius:12px;padding:20px;transition:box-shadow .15s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,.08)'" onmouseout="this.style.boxShadow='none'">
+                <div style="font-size:24px;margin-bottom:10px;"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon" style="color:#16a34a"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg></div>
+                <div style="font-weight:600;color:#1a2130;font-size:14px;">WhatsApp Monitor</div>
+                <div style="color:#8896aa;font-size:12px;margin-top:4px;">Live inbound sessions</div>
+            </div>
+        </a>
+        <a href="/artefacts?type=engagement" style="text-decoration:none;">
+            <div style="background:#fff;border:1px solid #e4e8ef;border-radius:12px;padding:20px;transition:box-shadow .15s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,.08)'" onmouseout="this.style.boxShadow='none'">
+                <div style="font-size:24px;margin-bottom:10px;"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon" style="color:#7c3aed"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg></div>
+                <div style="font-weight:600;color:#1a2130;font-size:14px;">Inspection Reports</div>
+                <div style="color:#8896aa;font-size:12px;margin-top:4px;">View and create reports</div>
+            </div>
+        </a>
+        <a href="/fire-door" style="text-decoration:none;">
+            <div style="background:#fff;border:1px solid #e4e8ef;border-radius:12px;padding:20px;transition:box-shadow .15s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,.08)'" onmouseout="this.style.boxShadow='none'">
+                <div style="font-size:24px;margin-bottom:10px;"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon" style="color:#0891b2"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path><path d="M8 6h.01"></path><path d="M16 6h.01"></path><path d="M12 6h.01"></path><path d="M12 10h.01"></path><path d="M12 14h.01"></path><path d="M16 10h.01"></path><path d="M16 14h.01"></path><path d="M8 10h.01"></path><path d="M8 14h.01"></path></svg></div>
+                <div style="font-weight:600;color:#1a2130;font-size:14px;">Estate Inspections</div>
+                <div style="color:#8896aa;font-size:12px;margin-top:4px;">Fire door and estate checks</div>
+            </div>
+        </a>
+        <a href="/databases/clients" style="text-decoration:none;">
+            <div style="background:#fff;border:1px solid #e4e8ef;border-radius:12px;padding:20px;transition:box-shadow .15s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,.08)'" onmouseout="this.style.boxShadow='none'">
+                <div style="font-size:24px;margin-bottom:10px;"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon" style="color:#d97706"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div>
+                <div style="font-weight:600;color:#1a2130;font-size:14px;">Clients</div>
+                <div style="color:#8896aa;font-size:12px;margin-top:4px;">Client database</div>
+            </div>
+        </a>
+        <a href="/financials/quote" style="text-decoration:none;">
+            <div style="background:#fff;border:1px solid #e4e8ef;border-radius:12px;padding:20px;transition:box-shadow .15s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,.08)'" onmouseout="this.style.boxShadow='none'">
+                <div style="font-size:24px;margin-bottom:10px;"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon" style="color:#059669"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></div>
+                <div style="font-weight:600;color:#1a2130;font-size:14px;">Financials</div>
+                <div style="color:#8896aa;font-size:12px;margin-top:4px;">Quotes and invoices</div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<script>
+fetch('/fm/api/tickets')
+  .then(r => r.json())
+  .then(data => {
+    const tickets = data.tickets || [];
+    const open   = tickets.filter(t => !['done','cancelled'].includes(t.status));
+    const urgent = tickets.filter(t => t.priority === 'urgent' && !['done','cancelled'].includes(t.status));
+    const triage = tickets.filter(t => t.status === 'new');
+    document.getElementById('kpi-total').textContent  = tickets.length;
+    document.getElementById('kpi-open').textContent   = open.length;
+    document.getElementById('kpi-urgent').textContent = urgent.length;
+    document.getElementById('kpi-triage').textContent = triage.length;
+
+    const recent = tickets.slice(0, 8);
+    const el = document.getElementById('recent-tickets-list');
+    if (!recent.length) {
+      el.innerHTML = '<p style="color:#8896aa;font-size:13px;text-align:center;padding:32px 0;">No tickets yet — <a href="/fm/dashboard" style="color:#2563eb">create one</a></p>';
+      return;
+    }
+    const priorityColour = {urgent:'#dc2626',normal:'#2563eb',low:'#6b7280'};
+    el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead><tr style="border-bottom:1px solid #e4e8ef;">
+        <th style="text-align:left;padding:8px 12px;color:#8896aa;font-weight:500;">Ref</th>
+        <th style="text-align:left;padding:8px 12px;color:#8896aa;font-weight:500;">Summary</th>
+        <th style="text-align:left;padding:8px 12px;color:#8896aa;font-weight:500;">Estate</th>
+        <th style="text-align:left;padding:8px 12px;color:#8896aa;font-weight:500;">Priority</th>
+        <th style="text-align:left;padding:8px 12px;color:#8896aa;font-weight:500;">Status</th>
+      </tr></thead>
+      <tbody>${recent.map(t=>`<tr style="border-bottom:1px solid #f1f4f8;cursor:pointer;" onclick="location.href='/fm/ticket/${t.ref}'">
+        <td style="padding:10px 12px;font-weight:600;color:#2563eb;">${t.ref}</td>
+        <td style="padding:10px 12px;color:#1a2130;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.summary||'—'}</td>
+        <td style="padding:10px 12px;color:#4a5568;">${t.estate||'—'}</td>
+        <td style="padding:10px 12px;"><span style="color:${priorityColour[t.priority]||'#6b7280'};font-weight:500;text-transform:capitalize;">${t.priority||'—'}</span></td>
+        <td style="padding:10px 12px;text-transform:capitalize;color:#4a5568;">${t.status||'—'}</td>
+      </tr>`).join('')}</tbody></table>`;
+  })
+  .catch(() => {
+    document.getElementById('recent-tickets-list').innerHTML = '<p style="color:#8896aa;font-size:13px;text-align:center;padding:32px 0;">Could not load tickets</p>';
+  });
+</script>
+{% endblock %}

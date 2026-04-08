@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POP Telecom x BB — Clarification Form</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:      #0D1F3C;
+    --blue:      #1A56A0;
+    --blue-lt:   #EAF0FB;
+    --green:     #10B77F;
+    --green-lt:  #EDFAF4;
+    --amber:     #F59E0B;
+    --amber-lt:  #FFFBEC;
+    --red:       #DC2626;
+    --red-lt:    #FEF2F2;
+    --grey:      #F4F7FD;
+    --border:    #D5E4F5;
+    --text:      #1A2B45;
+    --muted:     #5A6C8A;
+    --white:     #FFFFFF;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: #0D1F3C;
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── TOP BANNER ─────────────────────────────── */
+  .banner {
+    background: var(--navy);
+    padding: 20px 32px 16px;
+    border-bottom: 2px solid rgba(16,183,127,0.4);
+    position: sticky; top: 0; z-index: 200;
+  }
+  .banner-row { display: flex; align-items: center; justify-content: space-between; }
+  .banner-brand { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green); margin-bottom: 4px; }
+  .banner-title { font-size: 18px; font-weight: 700; color: white; }
+  .banner-sub { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 2px; }
+  .progress-bar-wrap { background: rgba(255,255,255,0.08); border-radius: 20px; height: 6px; width: 240px; }
+  .progress-bar-fill { background: var(--green); border-radius: 20px; height: 6px; transition: width 0.4s; }
+  .progress-label { font-size: 11px; color: rgba(255,255,255,0.45); text-align: right; margin-top: 4px; font-family: 'IBM Plex Mono', monospace; }
+
+  /* ── LAYOUT ──────────────────────────────────── */
+  .layout { display: flex; min-height: calc(100vh - 82px); }
+
+  /* ── SIDEBAR ─────────────────────────────────── */
+  .sidebar {
+    width: 220px;
+    background: #0A1628;
+    flex-shrink: 0;
+    padding: 20px 0;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    position: sticky; top: 82px; height: calc(100vh - 82px); overflow-y: auto;
+  }
+  .nav-group-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: rgba(255,255,255,0.22); padding: 14px 18px 6px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 18px; cursor: pointer;
+    font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.45);
+    transition: all 0.12s; border-left: 2px solid transparent;
+  }
+  .nav-item:hover { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.04); }
+  .nav-item.active { color: white; border-left-color: var(--green); background: rgba(16,183,127,0.08); }
+  .nav-dot {
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    background: rgba(255,255,255,0.15);
+  }
+  .nav-dot.answered { background: var(--green); }
+  .nav-dot.partial  { background: var(--amber); }
+  .nav-dot.blocked  { background: var(--red); }
+
+  /* ── MAIN ────────────────────────────────────── */
+  .main { flex: 1; background: var(--grey); overflow-y: auto; }
+  .section { display: none; padding: 32px 36px 60px; max-width: 860px; }
+  .section.active { display: block; }
+
+  /* ── SECTION HEADER ─────────────────────────── */
+  .sec-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green); margin-bottom: 6px; }
+  .sec-title { font-size: 22px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+  .sec-desc { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 4px; }
+  .sec-rule { height: 2px; background: linear-gradient(90deg, var(--green) 0%, transparent 60%); border-radius: 1px; margin: 16px 0 28px; }
+
+  /* ── QUESTION CARD ──────────────────────────── */
+  .q-card {
+    background: white; border: 1px solid var(--border); border-radius: 10px;
+    margin-bottom: 18px; overflow: hidden;
+    transition: box-shadow 0.15s;
+  }
+  .q-card:focus-within { box-shadow: 0 0 0 2px var(--blue); }
+
+  .q-head {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex; gap: 14px; align-items: flex-start;
+  }
+  .q-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    background: var(--grey); border-radius: 4px;
+    padding: 2px 7px; flex-shrink: 0; margin-top: 1px;
+  }
+  .q-text { font-size: 13.5px; font-weight: 600; color: var(--navy); line-height: 1.5; flex: 1; }
+  .q-context { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+
+  .q-tag {
+    flex-shrink: 0; padding: 2px 9px; border-radius: 10px;
+    font-size: 10px; font-weight: 700; margin-top: 2px;
+  }
+  .tag-blocker  { background: #FEE2E2; color: var(--red); }
+  .tag-required { background: var(--amber-lt); color: #92400E; }
+  .tag-tbc      { background: var(--blue-lt); color: var(--blue); }
+  .tag-jb       { background: #F3E8FF; color: #6B21A8; }
+  .tag-arch     { background: var(--green-lt); color: #065F46; }
+
+  .q-body { padding: 14px 20px 16px; }
+
+  /* Radio + checkbox options */
+  .options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+  .opt-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 13px; border-radius: 7px; border: 1.5px solid var(--border);
+    cursor: pointer; transition: all 0.12s;
+  }
+  .opt-row:hover { border-color: var(--blue); background: var(--blue-lt); }
+  .opt-row.selected { border-color: var(--green); background: var(--green-lt); }
+  .opt-row input { display: none; }
+  .opt-box {
+    width: 17px; height: 17px; border-radius: 50%; border: 2px solid var(--border);
+    flex-shrink: 0; margin-top: 1px; transition: all 0.12s; position: relative;
+  }
+  .opt-row.selected .opt-box { border-color: var(--green); background: var(--green); }
+  .opt-row.selected .opt-box::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 7px; height: 7px; border-radius: 50%; background: white;
+  }
+  .opt-checkbox { border-radius: 4px; }
+  .opt-label { font-size: 13px; color: var(--text); line-height: 1.5; flex: 1; }
+  .opt-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* Textarea */
+  .q-textarea {
+    width: 100%; border: 1.5px solid var(--border); border-radius: 7px;
+    padding: 10px 13px; font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px; color: var(--text); resize: vertical; min-height: 80px;
+    outline: none; transition: border-color 0.12s;
+    background: var(--grey);
+  }
+  .q-textarea:focus { border-color: var(--blue); background: white; }
+  .q-textarea::placeholder { color: #A0AABB; }
+
+  .q-input {
+    width: 100%; border: 1.5px solid var(--border); border-radius: 7px;
+    padding: 9px 13px; font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px; color: var(--text); outline: none;
+    background: var(--grey); transition: border-color 0.12s;
+  }
+  .q-input:focus { border-color: var(--blue); background: white; }
+
+  .field-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; margin-top: 12px; }
+
+  /* Status indicator per card */
+  .q-status {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 20px;
+    font-size: 11px; font-weight: 600;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); }
+  .q-status.answered { color: var(--green); }
+  .q-status.answered .status-dot { background: var(--green); }
+  .q-status.partial { color: var(--amber); }
+  .q-status.partial .status-dot { background: var(--amber); }
+
+  /* Callout boxes */
+  .callout {
+    display: flex; gap: 10px; padding: 12px 14px; border-radius: 7px;
+    margin-bottom: 14px; font-size: 12.5px; line-height: 1.55;
+  }
+  .callout.blue  { background: var(--blue-lt); border-left: 3px solid var(--blue); color: #1E3A5F; }
+  .callout.amber { background: var(--amber-lt); border-left: 3px solid var(--amber); color: #78350F; }
+  .callout.red   { background: var(--red-lt); border-left: 3px solid var(--red); color: #7F1D1D; }
+  .callout.green { background: var(--green-lt); border-left: 3px solid var(--green); color: #064E3B; }
+  .callout-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+  /* Checklist items */
+  .checklist { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .check-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 9px 12px; border-radius: 6px; border: 1.5px solid var(--border);
+    cursor: pointer; transition: all 0.12s; background: white;
+  }
+  .check-row:hover { border-color: var(--blue); }
+  .check-row.ticked { border-color: var(--green); background: var(--green-lt); }
+  .check-box {
+    width: 17px; height: 17px; border-radius: 4px; border: 2px solid var(--border);
+    flex-shrink: 0; margin-top: 1px; transition: all 0.12s;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: white;
+  }
+  .check-row.ticked .check-box { border-color: var(--green); background: var(--green); }
+  .check-label { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .check-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* Nav buttons */
+  .nav-btns { display: flex; gap: 10px; margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); }
+  .btn {
+    padding: 10px 22px; border-radius: 7px; font-family: 'IBM Plex Sans', monospace;
+    font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s;
+  }
+  .btn-primary { background: var(--navy); color: white; }
+  .btn-primary:hover { background: var(--blue); }
+  .btn-secondary { background: white; color: var(--navy); border: 1.5px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--blue); color: var(--blue); }
+  .btn-export { background: var(--green); color: white; margin-left: auto; }
+  .btn-export:hover { background: #0E9A6B; }
+
+  /* Summary page */
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; }
+  .summary-stat {
+    background: white; border: 1px solid var(--border); border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .summary-stat .num { font-size: 32px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; }
+  .summary-stat .lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .summary-stat.green .num { color: var(--green); }
+  .summary-stat.amber .num { color: var(--amber); }
+  .summary-stat.red   .num { color: var(--red); }
+  .summary-stat.blue  .num { color: var(--blue); }
+
+  .summary-row {
+    background: white; border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 16px; margin-bottom: 8px;
+    display: flex; align-items: flex-start; gap: 12px;
+  }
+  .summary-qnum { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); min-width: 50px; }
+  .summary-qtxt { font-size: 12.5px; color: var(--text); flex: 1; }
+  .summary-ans { font-size: 12px; color: var(--muted); font-style: italic; }
+
+  @media (max-width: 700px) {
+    .sidebar { display: none; }
+    .section { padding: 20px; }
+    .summary-grid { grid-template-columns: 1fr 1fr; }
+    .banner-row .progress-bar-wrap { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- BANNER -->
+<div class="banner">
+  <div class="banner-row">
+    <div>
+      <div class="banner-brand">POP Telecom x Broadband Buddy</div>
+      <div class="banner-title">Integration Clarification Form</div>
+      <div class="banner-sub">All open items, decisions, and confirmations required before build starts</div>
+    </div>
+    <div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div>
+      </div>
+      <div class="progress-label" id="prog-label">0 / 0 answered</div>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="nav-group-label">Architecture</div>
+    <div class="nav-item active" onclick="goTo('arch')">
+      <div class="nav-dot" id="dot-arch"></div>Architecture Decisions
+    </div>
+    <div class="nav-item" onclick="goTo('avail')">
+      <div class="nav-dot" id="dot-avail"></div>Stage 1 - Availability
+    </div>
+    <div class="nav-item" onclick="goTo('ordering')">
+      <div class="nav-dot" id="dot-ordering"></div>Stage 2 - Ordering
+    </div>
+    <div class="nav-group-label">Products</div>
+    <div class="nav-item" onclick="goTo('products')">
+      <div class="nav-dot" id="dot-products"></div>Product Catalogue
+    </div>
+    <div class="nav-item" onclick="goTo('suppliers')">
+      <div class="nav-dot" id="dot-suppliers"></div>Suppliers &amp; Priority
+    </div>
+    <div class="nav-group-label">Commercial</div>
+    <div class="nav-item" onclick="goTo('payment')">
+      <div class="nav-dot" id="dot-payment"></div>Payment &amp; Pricing
+    </div>
+    <div class="nav-item" onclick="goTo('addons')">
+      <div class="nav-dot" id="dot-addons"></div>Routers &amp; Add-ons
+    </div>
+    <div class="nav-group-label">Integration</div>
+    <div class="nav-item" onclick="goTo('akj')">
+      <div class="nav-dot" id="dot-akj"></div>AKJ &amp; Order Sync
+    </div>
+    <div class="nav-item" onclick="goTo('crm')">
+      <div class="nav-dot" id="dot-crm"></div>CRM &amp; Data
+    </div>
+    <div class="nav-group-label">Review</div>
+    <div class="nav-item" onclick="goTo('summary')">
+      <div class="nav-dot" id="dot-summary"></div>Summary &amp; Export
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="main" id="main-scroll">
+
+    <!-- ══════════════════════════════════════════
+         SECTION: ARCHITECTURE DECISIONS
+    ══════════════════════════════════════════ -->
+    <div class="section active" id="sec-arch">
+      <div class="sec-eyebrow">Section 01 — Architecture</div>
+      <div class="sec-title">Architecture Decisions</div>
+      <div class="sec-desc">These are the structural decisions that need to be locked before any build work starts. They affect the estimate, the build order, and what gets built.</div>
+      <div class="sec-rule"></div>
+
+      <!-- Q1 -->
+      <div class="q-card" id="qcard-A1">
+        <div class="q-head">
+          <div class="q-num">A1</div>
+          <div style="flex:1">
+            <div class="q-text">Does a separate adapter service sit between POP Telecom and Broadband Buddy, or does POP call BB directly?</div>
+            <div class="q-context">The scope spec leaves this open. It affects the estimate and what gets built. Must be agreed at the architecture meeting before integration work starts.</div>
+          </div>
+          <div class="q-tag tag-arch">Arch meeting</div>
+        </div>
+        <div class="q-body">
+          <div class="callout amber"><div class="callout-icon">⚠</div><div>This is a blocker for the integration estimate. The two options have different build costs.</div></div>
+          <div class="options">
+            <label class="opt-row" onclick="selectOpt(this,'A1')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Option A — POP calls Broadband Buddy API directly. BB handles auth and request validation internally. No separate service.
+                <div class="opt-sub">Lower build cost. Simpler architecture. Less control over auth at POP level.</div>
+              </div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'A1')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Option B — A thin adapter service sits between POP and BB. Handles auth, request translation, response normalisation.
+                <div class="opt-sub">Additional build item. More control. Useful if POP and BB have different auth models.</div>
+              </div>
+            </label>
+          </div>
+          <div class="field-label">Notes / decision rationale</div>
+          <textarea class="q-textarea" id="A1-notes" placeholder="Record the decision made and any conditions attached..." oninput="updateStatus('A1')"></textarea>
+        </div>
+        <div class="q-status" id="status-A1"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <!-- Q2 -->
+      <div class="q-card" id="qcard-A2">
+        <div class="q-head">
+          <div class="q-num">A2</div>
+          <div style="flex:1">
+            <div class="q-text">Who performs the postcode / district code lookup — POP Telecom or Broadband Buddy?</div>
+            <div class="q-context">The flow diagram shows POP performing an ALK/CSS district code lookup before passing to BB. The client Q&A suggests simply passing postcode and door number to BB for it to handle. These are different flows and produce different build items.</div>
+          </div>
+          <div class="q-tag tag-arch">Arch meeting</div>
+        </div>
+        <div class="q-body">
+          <div class="callout blue"><div class="callout-icon">ℹ</div><div>Exact field payload — field names, format, whether door number is sent separately — must also be agreed and documented in the API contract before the integration is built.</div></div>
+          <div class="options">
+            <label class="opt-row" onclick="selectOpt(this,'A2')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Option A — POP performs the ALK/CSS district code lookup first, then sends the resolved code to BB.
+                <div class="opt-sub">POP needs access to the lookup service. More logic in POP.</div>
+              </div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'A2')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Option B — POP sends raw postcode + selected address to BB. BB handles district code resolution internally.
+                <div class="opt-sub">Simpler POP side. BB needs to handle all address resolution.</div>
+              </div>
+            </label>
+          </div>
+          <div class="field-label">Agreed field payload format (postcode, door number, address line format etc.)</div>
+          <textarea class="q-textarea" id="A2-payload" placeholder="e.g. { postcode: 'SW1A 1AA', addressId: '12345', doorNumber: '10' }" oninput="updateStatus('A2')" style="min-height:60px; font-family:'IBM Plex Mono',monospace; font-size:12px;"></textarea>
+          <div class="field-label">Notes</div>
+          <textarea class="q-textarea" id="A2-notes" placeholder="Confirm with BB team before build starts..." oninput="updateStatus('A2')" style="min-height:56px;"></textarea>
+        </div>
+        <div class="q-status" id="status-A2"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <!-- Q3 -->
+      <div class="q-card" id="qcard-A3">
+        <div class="q-head">
+          <div class="q-num">A3</div>
+          <div style="flex:1">
+            <div class="q-text">Is the POP Telecom Laravel backend being extended or rebuilt?</div>
+            <div class="q-context">The spec confirms: extend, not rebuild. Recorded here for sign-off.</div>
+          </div>
+          <div class="q-tag tag-required">Confirm</div>
+        </div>
+        <div class="q-body">
+          <div class="callout green"><div class="callout-icon">✓</div><div>Spec direction: extend the existing Laravel backend. Full rebuild estimated at ~30 weeks. Integration approach targets ~10 weeks.</div></div>
+          <div class="options">
+            <label class="opt-row" onclick="selectOpt(this,'A3')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Confirmed — extend existing Laravel backend only. No rebuild.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'A3')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Change of direction — partial or full rebuild is now being considered.
+                <div class="opt-sub">If selected, describe scope below.</div>
+              </div>
+            </label>
+          </div>
+          <div class="field-label">Notes</div>
+          <textarea class="q-textarea" id="A3-notes" placeholder="Any conditions or caveats..." oninput="updateStatus('A3')" style="min-height:56px;"></textarea>
+        </div>
+        <div class="q-status" id="status-A3"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-secondary" onclick="goTo('summary')">Jump to summary</button>
+        <button class="btn btn-primary" onclick="goTo('avail')">Next: Stage 1 Availability →</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         SECTION: STAGE 1 AVAILABILITY
+    ══════════════════════════════════════════ -->
+    <div class="section" id="sec-avail">
+      <div class="sec-eyebrow">Section 02 — Stage 1</div>
+      <div class="sec-title">Stage 1 — Availability</div>
+      <div class="sec-desc">Stage 1 covers availability checking only. No ordering, no payment, no AKJ. These questions define exactly what gets built in Stage 1.</div>
+      <div class="sec-rule"></div>
+
+      <!-- Q4 -->
+      <div class="q-card" id="qcard-B1">
+        <div class="q-head">
+          <div class="q-num">B1</div>
+          <div style="flex:1">
+            <div class="q-text">Which suppliers are in scope for Stage 1 availability checks?</div>
+            <div class="q-context">PXC is already working in BB. Freedom Fibre and Giacom need to be added. Confirm what is in scope for Stage 1.</div>
+          </div>
+          <div class="q-tag tag-required">Confirm</div>
+        </div>
+        <div class="q-body">
+          <div class="checklist">
+            <div class="check-row" onclick="toggleCheck(this,'B1')">
+              <div class="check-box"></div>
+              <div><div class="check-label">PXC — already integrated in BB</div><div class="check-sub">Includes CityFibre (CFH) results</div></div>
+            </div>
+            <div class="check-row" onclick="toggleCheck(this,'B1')">
+              <div class="check-box"></div>
+              <div><div class="check-label">Giacom — to be added to BB in Stage 1</div></div>
+            </div>
+            <div class="check-row" onclick="toggleCheck(this,'B1')">
+              <div class="check-box"></div>
+              <div><div class="check-label">Freedom Fibre — to be added to BB in Stage 1</div></div>
+            </div>
+          </div>
+          <div class="field-label">Any suppliers NOT in Stage 1 scope and why</div>
+          <textarea class="q-textarea" id="B1-notes" placeholder="e.g. Freedom Fibre API access not yet confirmed - deferred to Stage 1b..." oninput="updateStatus('B1')" style="min-height:56px;"></textarea>
+        </div>
+        <div class="q-status" id="status-B1"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <!-- Q5 -->
+      <div class="q-card" id="qcard-B2">
+        <div class="q-head">
+          <div class="q-num">B2</div>
+          <div style="flex:1">
+            <div class="q-text">What does POP Telecom display when Broadband Buddy is unavailable or returns an error?</div>
+            <div class="q-context">BB unavailability handling must be explicitly built and tested on the POP side. The spec confirms POP must not show partial results or a blank page with no explanation.</div>
+          </div>
+          <div class="q-tag tag-required">Define</div>
+        </div>
+        <div class="q-body">
+          <div class="callout red"><div class="callout-icon">⚠</div><div>This must be defined before frontend build starts. Devs need the exact fallback behaviour — message text, whether to show cached data, whether to allow manual fallback to existing flow.</div></div>
+          <div class="options">
+            <label class="opt-row" onclick="selectOpt(this,'B2')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Show a user-facing error message and prevent product display entirely. No cached data shown.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'B2')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Show a user-facing error message but allow fallback to the existing direct API flow as a temporary backup.
+                <div class="opt-sub">More complex to build. Requires the old flow to remain active in parallel.</div>
+              </div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'B2')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Other — define below.</div>
+            </label>
+          </div>
+          <div class="field-label">Agreed fallback message text (for the customer to see)</div>
+          <textarea class="q-textarea" id="B2-msg" placeholder="e.g. 'We are unable to check availability right now. Please try again in a few minutes or call us on...'" oninput="updateStatus('B2')" style="min-height:64px;"></textarea>
+        </div>
+        <div class="q-status" id="status-B2"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <!-- Q6 -->
+      <div class="q-card" id="qcard-B3">
+        <div class="q-head">
+          <div class="q-num">B3</div>
+          <div style="flex:1">
+            <div class="q-text">Has Stage 1 sign-off criteria been agreed? What does "Stage 1 stable" mean?</div>
+            <div class="q-context">Stage 2 cannot go live until Stage 1 is complete and stable. These criteria define when Stage 1 is done.</div>
+          </div>
+          <div class="q-tag tag-required">Define</div>
+        </div>
+        <div class="q-body">
+          <div class="checklist">
+            <div class="check-row ticked" onclick="toggleCheck(this,'B3')">
+              <div class="check-box">✓</div>
+              <div><div class="check-label">BB availability endpoint live and returning results</div></div>
+            </div>
+            <div class="check-row ticked" onclick="toggleCheck(this,'B3')">
+              <div class="check-box">✓</div>
+              <div><div class="check-label">POP catalogue mapping working — BB catalogueName matches to internal product record</div></div>
+            </div>
+            <div class="check-row ticked" onclick="toggleCheck(this,'B3')">
+              <div class="check-box">✓</div>
+              <div><div class="check-label">Product display signed off by JB on staging</div></div>
+            </div>
+            <div class="check-row ticked" onclick="toggleCheck(this,'B3')">
+              <div class="check-box">✓</div>
+              <div><div class="check-label">BB unavailability fallback tested and confirmed</div></div>
+            </div>
+            <div class="check-row" onclick="toggleCheck(this,'B3')">
+              <div class="check-box"></div>
+              <div><div class="check-label">All three suppliers returning results in testing (FF, Giacom, PXC)</div></div>
+            </div>
+            <div class="check-row" onclick="toggleCheck(this,'B3')">
+              <div class="check-box"></div>
+              <div><div class="check-label">Priority and deduplication logic confirmed working — no duplicate products shown</div></div>
+            </div>
+          </div>
+          <div class="field-label">Any additional sign-off criteria</div>
+          <textarea class="q-textarea" id="B3-notes" placeholder="Add any other conditions JB or POP requires before Stage 1 goes live..." oninput="updateStatus('B3')" style="min-height:56px;"></textarea>
+        </div>
+        <div class="q-status" id="status-B3"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-secondary" onclick="goTo('arch')">← Back</button>
+        <button class="btn btn-primary" onclick="goTo('ordering')">Next: Stage 2 Ordering →</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         SECTION: STAGE 2 ORDERING
+    ══════════════════════════════════════════ -->
+    <div class="section" id="sec-ordering">
+      <div class="sec-eyebrow">Section 03 — Stage 2</div>
+      <div class="sec-title">Stage 2 — Ordering</div>
+      <div class="sec-desc">Stage 2 adds order placement, Order ID handling, and AKJ integration. Stage 1 must be complete and stable before Stage 2 goes live.</div>
+      <div class="sec-rule"></div>
+
+      <!-- Q7 -->
+      <div class="q-card" id="qcard-C1">
+        <div class="q-head">
+          <div class="q-num">C1</div>
+          <div style="flex:1">
+            <div class="q-text">What is the exact sequence of events at the point an order is placed?</div>
+            <div class="q-context">The sequence needs to be locked so devs can build the correct dependencies. Payment must happen before the order is sent to BB. Confirm the sequence below.</div>
+          </div>
+          <div class="q-tag tag-required">Confirm</div>
+        </div>
+        <div class="q-body">
+          <div class="callout green"><div class="callout-icon">✓</div><div>Working assumption for estimation: customer selects product in POP, POP applies pricing, customer pays via POP gateway, POP sends order to BB only after payment confirmed, BB routes to supplier, supplier returns Order ID, BB passes to POP, POP stores and writes to AKJ.</div></div>
+          <div class="checklist">
+            <div class="check-row ticked" onclick="toggleCheck(this,'C1')">
+              <div class="check-box">✓</div>
+              <div><div class="check-label">1. Customer selects product on POP Telecom</div></div>
+            </div>
+            <div class="check-row ticked" onclick="toggleCheck(this,'C1')">
+              <div class="check-box">✓</div>
+              <div><div class="check-label">2. POP applies pricing from internal catalogue</div></div>
+            </div>
+            <div class="check-row ticked" onclick="toggleCheck(this,'C1')">
+              <div class="check-box">✓</div>
+              <div><div class="check-label">3. Customer pays via existing POP payment gateway</div></div>
+            </div>
+            <div class="check-row ticked" onclick="toggleCheck(this,'C1')">
+              <div class="check-box">✓</div>
+              <div><div class="check-label">4. POP sends order to BB only after payment is confirmed</div></div>
+            </div>
+            <div class="check-row ticked" onclick="toggleCheck(this,'C1')">
+              <div class="check-box">✓</div>
+              <div><div class="check-label">5. BB determines supplier and places order with supplier API</div></div>
+            </div>
+            <div class="check-row ticked" onclick="toggleCheck(this,'C1')">
+              <div class="check-box">✓</div>
+              <div><div class="check-label">6. Supplier returns Order ID to BB</div></div>
+            </div>
+            <div class="check-row ticked" onclick="toggleCheck(this,'C1')">
+              <div class="check-box">✓</div>
+              <div><div class="check-label">7. BB stores Order ID and returns it to POP</div></div>
+            </div>
+            <div class="check-row ticked" onclick="toggleCheck(this,'C1')">
+              <div class="check-box">✓</div>
+              <div><div class="check-label">8. POP stores Order ID against customer record</div></div>
+            </div>
+            <div class="check-row ticked" onclick="toggleCheck(this,'C1')">
+              <div class="check-box">✓</div>
+              <div><div class="check-label">9. POP writes Order ID to AKJ task notes</div></div>
+            </div>
+          </div>
+          <div class="field-label">Any deviations from the above sequence</div>
+          <textarea class="q-textarea" id="C1-notes" placeholder="Note any steps that differ from the sequence above..." oninput="updateStatus('C1')" style="min-height:56px;"></textarea>
+        </div>
+        <div class="q-status" id="status-C1"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <!-- Q8 -->
+      <div class="q-card" id="qcard-C2">
+        <div class="q-head">
+          <div class="q-num">C2</div>
+          <div style="flex:1">
+            <div class="q-text">What happens if the order fails at the supplier after payment has been taken?</div>
+            <div class="q-context">Payment is taken by POP before the order is sent to BB. If BB or the supplier rejects the order after that point, there is a customer with a pending charge and no order. This needs a defined fallback.</div>
+          </div>
+          <div class="q-tag tag-blocker">Blocker</div>
+        </div>
+        <div class="q-body">
+          <div class="callout red"><div class="callout-icon">⚠</div><div>This is not defined in the current spec. It needs to be addressed before Stage 2 goes live. If it is not handled, there is a risk of taking payment without fulfilling the order.</div></div>
+          <div class="options">
+            <label class="opt-row" onclick="selectOpt(this,'C2')">
+              <div class="opt-box"></div>
+              <div class="opt-label">POP automatically refunds the customer and creates a support task.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'C2')">
+              <div class="opt-box"></div>
+              <div class="opt-label">POP flags the order as failed, holds payment, and notifies the team manually to resolve.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'C2')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Other — define below.</div>
+            </label>
+          </div>
+          <div class="field-label">Define the failure handling behaviour</div>
+          <textarea class="q-textarea" id="C2-notes" placeholder="Describe what POP should do if BB or the supplier rejects the order after payment..." oninput="updateStatus('C2')"></textarea>
+        </div>
+        <div class="q-status" id="status-C2"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <!-- Q9 -->
+      <div class="q-card" id="qcard-C3">
+        <div class="q-head">
+          <div class="q-num">C3</div>
+          <div style="flex:1">
+            <div class="q-text">What is the mechanism for writing the Order ID to the AKJ task?</div>
+            <div class="q-context">AKJ task note write is in Stage 2 scope in principle. The AKJ Task ID is already stored in the POP backend. The exact mechanism — API call, webhook, manual push — has not been confirmed.</div>
+          </div>
+          <div class="q-tag tag-tbc">TBC</div>
+        </div>
+        <div class="q-body">
+          <div class="options">
+            <label class="opt-row" onclick="selectOpt(this,'C3')">
+              <div class="opt-box"></div>
+              <div class="opt-label">POP calls the AKJ API directly with the Order ID and task note text.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'C3')">
+              <div class="opt-box"></div>
+              <div class="opt-label">AKJ is updated via a webhook that BB triggers after order placement.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'C3')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Manual process — team updates AKJ manually using the Order ID from the POP order record.</div>
+            </label>
+          </div>
+          <div class="field-label">AKJ API access — is the AKJ API available for POP to call?</div>
+          <div class="options" style="margin-top:6px">
+            <label class="opt-row" onclick="selectOpt(this,'C3-api')"><div class="opt-box"></div><div class="opt-label">Yes — AKJ has an API POP can use</div></label>
+            <label class="opt-row" onclick="selectOpt(this,'C3-api')"><div class="opt-box"></div><div class="opt-label">No — manual or other method required</div></label>
+            <label class="opt-row" onclick="selectOpt(this,'C3-api')"><div class="opt-box"></div><div class="opt-label">Not confirmed yet</div></label>
+          </div>
+          <div class="field-label">Notes</div>
+          <textarea class="q-textarea" id="C3-notes" placeholder="Include any AKJ API documentation links or auth details if known..." oninput="updateStatus('C3')" style="min-height:56px;"></textarea>
+        </div>
+        <div class="q-status" id="status-C3"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <!-- Q10 -->
+      <div class="q-card" id="qcard-C4">
+        <div class="q-head">
+          <div class="q-num">C4</div>
+          <div style="flex:1">
+            <div class="q-text">Is order status sync (post-order supplier status updates) in Stage 2 or deferred?</div>
+            <div class="q-context">As an order progresses through the supplier network the status will change. Those changes may need to update AKJ task due dates and notes. This is marked TBA in the spec.</div>
+          </div>
+          <div class="q-tag tag-tbc">TBA</div>
+        </div>
+        <div class="q-body">
+          <div class="options">
+            <label class="opt-row" onclick="selectOpt(this,'C4')">
+              <div class="opt-box"></div>
+              <div class="opt-label">In Stage 2 scope — status changes from supplier must trigger AKJ updates. Include in Stage 2 estimate.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'C4')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Deferred — not in Stage 2. Order ID and initial notes written only. Status sync scoped in a later phase.</div>
+            </label>
+          </div>
+          <div class="field-label">If in scope — what triggers the update and what changes in AKJ?</div>
+          <textarea class="q-textarea" id="C4-notes" placeholder="e.g. supplier sends provisioning update → AKJ task due date updated + note added..." oninput="updateStatus('C4')" style="min-height:56px;"></textarea>
+        </div>
+        <div class="q-status" id="status-C4"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-secondary" onclick="goTo('avail')">← Back</button>
+        <button class="btn btn-primary" onclick="goTo('products')">Next: Product Catalogue →</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         SECTION: PRODUCT CATALOGUE
+    ══════════════════════════════════════════ -->
+    <div class="section" id="sec-products">
+      <div class="sec-eyebrow">Section 04 — Products</div>
+      <div class="sec-title">Product Catalogue</div>
+      <div class="sec-desc">POP Telecom owns the internal product catalogue. BB returns a catalogueName and POP maps it to an internal record. This section confirms how that works in practice.</div>
+      <div class="sec-rule"></div>
+
+      <!-- Q11 -->
+      <div class="q-card" id="qcard-D1">
+        <div class="q-head">
+          <div class="q-num">D1</div>
+          <div style="flex:1">
+            <div class="q-text">Has JB produced or committed to producing the product equivalence mapping sheet?</div>
+            <div class="q-context">This sheet maps equivalent products across Freedom Fibre, Giacom, and PXC portals. It is a hard blocker for the BB matching logic build. Without it, BB cannot deduplicate or prioritise products correctly.</div>
+          </div>
+          <div class="q-tag tag-blocker">Blocker</div>
+        </div>
+        <div class="q-body">
+          <div class="callout red"><div class="callout-icon">⚠</div><div>This is on the critical path. BB availability engine build cannot start without it. If this is delayed, the entire timeline moves.</div></div>
+          <div class="options">
+            <label class="opt-row" onclick="selectOpt(this,'D1')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Completed — mapping sheet is ready to share with the dev team.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'D1')">
+              <div class="opt-box"></div>
+              <div class="opt-label">In progress — JB is working on it. Expected completion date below.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'D1')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Not started — needs to be prioritised before any build begins.</div>
+            </label>
+          </div>
+          <div class="field-label">Expected completion date</div>
+          <input type="date" class="q-input" id="D1-date" oninput="updateStatus('D1')">
+          <div class="field-label">Link or location of mapping sheet</div>
+          <input type="text" class="q-input" id="D1-link" placeholder="Google Drive link, Trello card, email thread..." oninput="updateStatus('D1')" style="margin-top:6px;">
+        </div>
+        <div class="q-status" id="status-D1"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <!-- Q12 -->
+      <div class="q-card" id="qcard-D2">
+        <div class="q-head">
+          <div class="q-num">D2</div>
+          <div style="flex:1">
+            <div class="q-text">Who is responsible for maintaining the catalogue mapping when new products are added by a supplier?</div>
+            <div class="q-context">The mapping between BB catalogueName and POP internal product record must stay aligned. If BB adds a new product and POP has no matching record, that product will not display. A process is needed.</div>
+          </div>
+          <div class="q-tag tag-jb">Action: JB</div>
+        </div>
+        <div class="q-body">
+          <div class="options">
+            <label class="opt-row" onclick="selectOpt(this,'D2')">
+              <div class="opt-box"></div>
+              <div class="opt-label">JB manages the mapping. New products are added to POP catalogue and mapped manually when notified by BB/supplier.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'D2')">
+              <div class="opt-box"></div>
+              <div class="opt-label">BB notifies POP via a structured process (email, Trello card, or API notification) when new products are available.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'D2')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Admin UI — new products from BB that have no match are surfaced in the POP admin panel for JB to map.</div>
+            </label>
+          </div>
+          <div class="field-label">Notes</div>
+          <textarea class="q-textarea" id="D2-notes" placeholder="Define the ongoing maintenance process..." oninput="updateStatus('D2')" style="min-height:56px;"></textarea>
+        </div>
+        <div class="q-status" id="status-D2"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <!-- Q13 -->
+      <div class="q-card" id="qcard-D3">
+        <div class="q-head">
+          <div class="q-num">D3</div>
+          <div style="flex:1">
+            <div class="q-text">Has the dynamic product content template been defined for display on the POP site?</div>
+            <div class="q-context">JB to produce the product page content template with field mappings: product name, technology/speeds, price, add-ons, CPI/upfront charges, duration. This is needed before the frontend display build starts.</div>
+          </div>
+          <div class="q-tag tag-jb">Action: JB</div>
+        </div>
+        <div class="q-body">
+          <div class="checklist">
+            <div class="check-row" onclick="toggleCheck(this,'D3')">
+              <div class="check-box"></div>
+              <div><div class="check-label">Product name</div></div>
+            </div>
+            <div class="check-row" onclick="toggleCheck(this,'D3')">
+              <div class="check-box"></div>
+              <div><div class="check-label">Technology type (FTTP / SoGEA)</div></div>
+            </div>
+            <div class="check-row" onclick="toggleCheck(this,'D3')">
+              <div class="check-box"></div>
+              <div><div class="check-label">Download / upload speeds</div></div>
+            </div>
+            <div class="check-row" onclick="toggleCheck(this,'D3')">
+              <div class="check-box"></div>
+              <div><div class="check-label">Monthly price</div></div>
+            </div>
+            <div class="check-row" onclick="toggleCheck(this,'D3')">
+              <div class="check-box"></div>
+              <div><div class="check-label">Upfront cost</div></div>
+            </div>
+            <div class="check-row" onclick="toggleCheck(this,'D3')">
+              <div class="check-box"></div>
+              <div><div class="check-label">Contract length</div></div>
+            </div>
+            <div class="check-row" onclick="toggleCheck(this,'D3')">
+              <div class="check-box"></div>
+              <div><div class="check-label">CPI terms</div></div>
+            </div>
+            <div class="check-row" onclick="toggleCheck(this,'D3')">
+              <div class="check-box"></div>
+              <div><div class="check-label">Add-ons (if applicable)</div></div>
+            </div>
+          </div>
+          <div class="field-label">Status / link to template</div>
+          <textarea class="q-textarea" id="D3-notes" placeholder="Where is the template? Has it been sent to maastrix?" oninput="updateStatus('D3')" style="min-height:56px;"></textarea>
+        </div>
+        <div class="q-status" id="status-D3"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-secondary" onclick="goTo('ordering')">← Back</button>
+        <button class="btn btn-primary" onclick="goTo('suppliers')">Next: Suppliers →</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         SECTION: SUPPLIERS & PRIORITY
+    ══════════════════════════════════════════ -->
+    <div class="section" id="sec-suppliers">
+      <div class="sec-eyebrow">Section 05 — Suppliers</div>
+      <div class="sec-title">Suppliers &amp; Priority</div>
+      <div class="sec-desc">Priority rules and supplier configuration live in Broadband Buddy. These questions confirm the setup and any outstanding supplier decisions.</div>
+      <div class="sec-rule"></div>
+
+      <!-- Q14 -->
+      <div class="q-card" id="qcard-E1">
+        <div class="q-head">
+          <div class="q-num">E1</div>
+          <div style="flex:1">
+            <div class="q-text">Is the supplier priority order confirmed as Freedom Fibre (1), Giacom (2), PXC (3)?</div>
+            <div class="q-context">This is the order BB uses to decide which supplier to show and route orders to when the same product is available from more than one supplier.</div>
+          </div>
+          <div class="q-tag tag-required">Confirm</div>
+        </div>
+        <div class="q-body">
+          <div class="options">
+            <label class="opt-row" onclick="selectOpt(this,'E1')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Confirmed — Freedom Fibre first, Giacom second, PXC third.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'E1')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Priority order needs to change — define correct order below.</div>
+            </label>
+          </div>
+          <div class="field-label">If changed — define correct priority order and reason</div>
+          <textarea class="q-textarea" id="E1-notes" placeholder="e.g. Giacom first because Freedom Fibre coverage is limited..." oninput="updateStatus('E1')" style="min-height:56px;"></textarea>
+        </div>
+        <div class="q-status" id="status-E1"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <!-- Q15 -->
+      <div class="q-card" id="qcard-E2">
+        <div class="q-head">
+          <div class="q-num">E2</div>
+          <div style="flex:1">
+            <div class="q-text">Where does the supplier priority admin interface live — BB admin only, or also in POP?</div>
+            <div class="q-context">Priority rules must be configurable without code changes. BB owns supplier logic, so the natural home is BB admin. Whether POP also exposes a control surface is TBC.</div>
+          </div>
+          <div class="q-tag tag-tbc">TBC</div>
+        </div>
+        <div class="q-body">
+          <div class="options">
+            <label class="opt-row" onclick="selectOpt(this,'E2')">
+              <div class="opt-box"></div>
+              <div class="opt-label">BB admin only — POP team accesses BB admin to change priority. POP site has no control panel for this.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'E2')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Both — BB admin is the source of truth, but POP also exposes a read-only view or simplified control surface.</div>
+            </label>
+          </div>
+          <div class="field-label">Notes</div>
+          <textarea class="q-textarea" id="E2-notes" placeholder="Who needs access to change priority? How often is it expected to change?" oninput="updateStatus('E2')" style="min-height:56px;"></textarea>
+        </div>
+        <div class="q-status" id="status-E2"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <!-- Q16 -->
+      <div class="q-card" id="qcard-E3">
+        <div class="q-head">
+          <div class="q-num">E3</div>
+          <div style="flex:1">
+            <div class="q-text">What is the current status of CityFibre routing via Freedom Fibre or Giacom?</div>
+            <div class="q-context">PXC currently returns CityFibre (CFH) availability. Commercial deals with Freedom Fibre and Giacom for direct CF routing are in progress. This affects which supplier takes priority for CF products.</div>
+          </div>
+          <div class="q-tag tag-tbc">TBA</div>
+        </div>
+        <div class="q-body">
+          <div class="options">
+            <label class="opt-row" onclick="selectOpt(this,'E3')">
+              <div class="opt-box"></div>
+              <div class="opt-label">CityFibre continues via PXC for now. No change to current setup at Stage 1.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'E3')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Deal confirmed with Freedom Fibre or Giacom for CF routing — update priority rules accordingly.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'E3')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Still in negotiation — proceed on assumption of PXC for now.</div>
+            </label>
+          </div>
+          <div class="field-label">Update / notes on deal status</div>
+          <textarea class="q-textarea" id="E3-notes" placeholder="G Networks, Freedom Fibre CF deal status..." oninput="updateStatus('E3')" style="min-height:56px;"></textarea>
+        </div>
+        <div class="q-status" id="status-E3"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-secondary" onclick="goTo('products')">← Back</button>
+        <button class="btn btn-primary" onclick="goTo('payment')">Next: Payment →</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         SECTION: PAYMENT & PRICING
+    ══════════════════════════════════════════ -->
+    <div class="section" id="sec-payment">
+      <div class="sec-eyebrow">Section 06 — Commercial</div>
+      <div class="sec-title">Payment &amp; Pricing</div>
+      <div class="sec-desc">Payment and pricing stay entirely in POP Telecom. BB has no involvement. These questions confirm the working assumptions so devs can estimate correctly.</div>
+      <div class="sec-rule"></div>
+
+      <!-- Q17 -->
+      <div class="q-card" id="qcard-F1">
+        <div class="q-head">
+          <div class="q-num">F1</div>
+          <div style="flex:1">
+            <div class="q-text">Confirm that the existing POP payment gateway is used unchanged for Stage 1 and Stage 2.</div>
+            <div class="q-context">Working assumption: payment stays in POP, existing gateway, no changes. BB has no involvement in payment at any point.</div>
+          </div>
+          <div class="q-tag tag-required">Confirm</div>
+        </div>
+        <div class="q-body">
+          <div class="options">
+            <label class="opt-row" onclick="selectOpt(this,'F1')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Confirmed — existing POP payment gateway, no changes.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'F1')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Change required — describe below.</div>
+            </label>
+          </div>
+          <div class="field-label">Current payment provider / gateway</div>
+          <input type="text" class="q-input" id="F1-provider" placeholder="e.g. Stripe, Sage Pay, WorldPay..." oninput="updateStatus('F1')" style="margin-bottom:10px;">
+          <div class="field-label">Notes</div>
+          <textarea class="q-textarea" id="F1-notes" placeholder="Any payment-related changes planned alongside this integration..." oninput="updateStatus('F1')" style="min-height:56px;"></textarea>
+        </div>
+        <div class="q-status" id="status-F1"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <!-- Q18 -->
+      <div class="q-card" id="qcard-F2">
+        <div class="q-head">
+          <div class="q-num">F2</div>
+          <div style="flex:1">
+            <div class="q-text">Confirm that all pricing — monthly, upfront, CPI — comes from the POP internal product catalogue, not from BB.</div>
+            <div class="q-context">BB returns catalogue name and speed only. Pricing is derived entirely from the matched internal POP product record.</div>
+          </div>
+          <div class="q-tag tag-required">Confirm</div>
+        </div>
+        <div class="q-body">
+          <div class="options">
+            <label class="opt-row" onclick="selectOpt(this,'F2')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Confirmed — all pricing from POP internal catalogue only. BB returns no pricing data.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'F2')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Partially — some pricing data will come from the supplier via BB. Define below.</div>
+            </label>
+          </div>
+          <div class="field-label">Notes</div>
+          <textarea class="q-textarea" id="F2-notes" placeholder="Any pricing edge cases..." oninput="updateStatus('F2')" style="min-height:56px;"></textarea>
+        </div>
+        <div class="q-status" id="status-F2"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-secondary" onclick="goTo('suppliers')">← Back</button>
+        <button class="btn btn-primary" onclick="goTo('addons')">Next: Routers &amp; Add-ons →</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         SECTION: ROUTERS & ADD-ONS
+    ══════════════════════════════════════════ -->
+    <div class="section" id="sec-addons">
+      <div class="sec-eyebrow">Section 07 — Commercial</div>
+      <div class="sec-title">Routers &amp; Add-ons</div>
+      <div class="sec-desc">Routers and add-ons are deferred from BB integration scope. The existing POP logic does not need to be dismantled. This section confirms the estimation default and any exceptions.</div>
+      <div class="sec-rule"></div>
+
+      <!-- Q19 -->
+      <div class="q-card" id="qcard-G1">
+        <div class="q-head">
+          <div class="q-num">G1</div>
+          <div style="flex:1">
+            <div class="q-text">For the purpose of Stage 1 and Stage 2 estimation, confirm routers and add-ons are excluded from BB integration scope.</div>
+            <div class="q-context">Estimation default: routers and add-ons excluded from Stage 1 and Stage 2 unless JB confirms otherwise. Existing POP logic stays in place and does not need rebuilding.</div>
+          </div>
+          <div class="q-tag tag-jb">Action: JB</div>
+        </div>
+        <div class="q-body">
+          <div class="options">
+            <label class="opt-row" onclick="selectOpt(this,'G1')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Confirmed — excluded from Stage 1 and Stage 2. Existing POP logic untouched. Scope for later phase.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'G1')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Partial inclusion required — some router or add-on logic needs to be in Stage 1 or Stage 2. Define below.</div>
+            </label>
+          </div>
+          <div class="field-label">If partial — what specifically needs to be included and in which stage</div>
+          <textarea class="q-textarea" id="G1-notes" placeholder="e.g. router selection must remain visible in Stage 1 as a separate step not linked to BB..." oninput="updateStatus('G1')"></textarea>
+        </div>
+        <div class="q-status" id="status-G1"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <!-- Q20 -->
+      <div class="q-card" id="qcard-G2">
+        <div class="q-head">
+          <div class="q-num">G2</div>
+          <div style="flex:1">
+            <div class="q-text">When a customer buys via the new BB-driven flow, can they still select a router and add-ons from the existing POP catalogue independently?</div>
+            <div class="q-context">If yes, the UX needs to show product selection (from BB) and router/add-on selection (from POP) as separate steps in the same checkout flow.</div>
+          </div>
+          <div class="q-tag tag-jb">Action: JB</div>
+        </div>
+        <div class="q-body">
+          <div class="options">
+            <label class="opt-row" onclick="selectOpt(this,'G2')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Yes — router and add-on selection remains as a separate step in the POP checkout flow, independent of BB.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'G2')">
+              <div class="opt-box"></div>
+              <div class="opt-label">No — router and add-on selection is suspended for Stage 1 and Stage 2. To be reintroduced later.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'G2')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Not decided yet — JB to confirm before frontend build starts.</div>
+            </label>
+          </div>
+          <div class="field-label">Notes</div>
+          <textarea class="q-textarea" id="G2-notes" placeholder="Any UX or business logic notes..." oninput="updateStatus('G2')" style="min-height:56px;"></textarea>
+        </div>
+        <div class="q-status" id="status-G2"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-secondary" onclick="goTo('payment')">← Back</button>
+        <button class="btn btn-primary" onclick="goTo('akj')">Next: AKJ &amp; Order Sync →</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         SECTION: AKJ & ORDER SYNC
+    ══════════════════════════════════════════ -->
+    <div class="section" id="sec-akj">
+      <div class="sec-eyebrow">Section 08 — Integration</div>
+      <div class="sec-title">AKJ &amp; Order Sync</div>
+      <div class="sec-desc">AKJ is the billing and task management system. The AKJ Task ID is already stored in POP. Order ID must be written to AKJ at order time. Questions here cover the integration and any ongoing sync.</div>
+      <div class="sec-rule"></div>
+
+      <!-- Q21 -->
+      <div class="q-card" id="qcard-H1">
+        <div class="q-head">
+          <div class="q-num">H1</div>
+          <div style="flex:1">
+            <div class="q-text">Confirm the AKJ Task ID is currently stored in the POP Telecom backend against each customer or order record.</div>
+            <div class="q-context">This is stated in the spec as already in place. Confirmation needed so devs do not have to build this.</div>
+          </div>
+          <div class="q-tag tag-required">Confirm</div>
+        </div>
+        <div class="q-body">
+          <div class="options">
+            <label class="opt-row" onclick="selectOpt(this,'H1')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Confirmed — AKJ Task ID is stored in the POP database. Field name / location known.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'H1')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Partially — stored for some records but not all. Needs investigation.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'H1')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Not confirmed — needs to be checked with the dev team.</div>
+            </label>
+          </div>
+          <div class="field-label">Database table and field name where AKJ Task ID is stored</div>
+          <input type="text" class="q-input" id="H1-field" placeholder="e.g. orders.akj_task_id" oninput="updateStatus('H1')" style="margin-bottom:10px;">
+        </div>
+        <div class="q-status" id="status-H1"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <!-- Q22 -->
+      <div class="q-card" id="qcard-H2">
+        <div class="q-head">
+          <div class="q-num">H2</div>
+          <div style="flex:1">
+            <div class="q-text">What note text should be appended to the AKJ task when an Order ID is received?</div>
+            <div class="q-context">POP writes to the AKJ task notes. The exact text format needs to be agreed so devs can implement it.</div>
+          </div>
+          <div class="q-tag tag-jb">Action: JB</div>
+        </div>
+        <div class="q-body">
+          <div class="field-label">Agreed note format / template</div>
+          <textarea class="q-textarea" id="H2-template" placeholder="e.g. 'Order placed via BB. Supplier: Freedom Fibre. Order ID: [ORDER_ID]. Date: [DATE].'" oninput="updateStatus('H2')" style="min-height:64px; font-family:'IBM Plex Mono',monospace; font-size:12px;"></textarea>
+          <div class="field-label">Any other fields to include in the note</div>
+          <textarea class="q-textarea" id="H2-fields" placeholder="e.g. product name, customer name, postcode..." oninput="updateStatus('H2')" style="min-height:56px;"></textarea>
+        </div>
+        <div class="q-status" id="status-H2"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-secondary" onclick="goTo('addons')">← Back</button>
+        <button class="btn btn-primary" onclick="goTo('crm')">Next: CRM &amp; Data →</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         SECTION: CRM & DATA
+    ══════════════════════════════════════════ -->
+    <div class="section" id="sec-crm">
+      <div class="sec-eyebrow">Section 09 — Data</div>
+      <div class="sec-title">CRM &amp; Data Centralisation</div>
+      <div class="sec-desc">CRM is deferred from Stage 1 and Stage 2 scope. These questions confirm that decision and capture any constraints the current build must respect.</div>
+      <div class="sec-rule"></div>
+
+      <!-- Q23 -->
+      <div class="q-card" id="qcard-I1">
+        <div class="q-head">
+          <div class="q-num">I1</div>
+          <div style="flex:1">
+            <div class="q-text">Confirm CRM integration is deferred and not in Stage 1 or Stage 2 scope.</div>
+            <div class="q-context">Zoho vs custom CRM is unresolved. The current build must not create point-to-point data coupling that would block a future CRM phase.</div>
+          </div>
+          <div class="q-tag tag-tbc">Deferred</div>
+        </div>
+        <div class="q-body">
+          <div class="options">
+            <label class="opt-row" onclick="selectOpt(this,'I1')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Confirmed — CRM deferred. No CRM dependency in Stage 1 or Stage 2.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'I1')">
+              <div class="opt-box"></div>
+              <div class="opt-label">CRM decision has been made — define which CRM and if it needs to be included in this phase.</div>
+            </label>
+          </div>
+          <div class="field-label">If CRM decided — which one and what is the integration requirement</div>
+          <textarea class="q-textarea" id="I1-notes" placeholder="Zoho / custom / Salesforce — and which data needs to flow there..." oninput="updateStatus('I1')" style="min-height:56px;"></textarea>
+        </div>
+        <div class="q-status" id="status-I1"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <!-- Q24 -->
+      <div class="q-card" id="qcard-I2">
+        <div class="q-head">
+          <div class="q-num">I2</div>
+          <div style="flex:1">
+            <div class="q-text">Is there any requirement to export or centralise customer or order data during Stage 1 or Stage 2?</div>
+            <div class="q-context">Even without a CRM decision, there may be a need to consolidate data from POP, BB, and AKJ for reporting or operations. Flag any such requirement here.</div>
+          </div>
+          <div class="q-tag tag-tbc">Check</div>
+        </div>
+        <div class="q-body">
+          <div class="options">
+            <label class="opt-row" onclick="selectOpt(this,'I2')">
+              <div class="opt-box"></div>
+              <div class="opt-label">No — data stays in each system. No centralisation needed in Stage 1 or 2.</div>
+            </label>
+            <label class="opt-row" onclick="selectOpt(this,'I2')">
+              <div class="opt-box"></div>
+              <div class="opt-label">Yes — there is a reporting or operational need. Define below.</div>
+            </label>
+          </div>
+          <div class="field-label">Notes</div>
+          <textarea class="q-textarea" id="I2-notes" placeholder="Any data export, reporting, or cross-system visibility needs..." oninput="updateStatus('I2')" style="min-height:56px;"></textarea>
+        </div>
+        <div class="q-status" id="status-I2"><div class="status-dot"></div>Not answered</div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-secondary" onclick="goTo('akj')">← Back</button>
+        <button class="btn btn-primary" onclick="goTo('summary')">View Summary →</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         SECTION: SUMMARY
+    ══════════════════════════════════════════ -->
+    <div class="section" id="sec-summary">
+      <div class="sec-eyebrow">Review</div>
+      <div class="sec-title">Summary &amp; Export</div>
+      <div class="sec-desc">Overview of all questions and their current status. Export a plain-text version to send with the developer response document.</div>
+      <div class="sec-rule"></div>
+
+      <div class="summary-grid" id="summary-stats"></div>
+      <div id="summary-list"></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-secondary" onclick="goTo('arch')">← Back to start</button>
+        <button class="btn btn-export" onclick="exportSummary()">Export answers as text</button>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<script>
+// ── DATA ─────────────────────────────────────────
+const QUESTIONS = [
+  { id:'A1', sec:'arch',      label:'A1', text:'Adapter service — POP calls BB directly or separate service?', type:'opt' },
+  { id:'A2', sec:'arch',      label:'A2', text:'Postcode / district code lookup ownership', type:'opt' },
+  { id:'A3', sec:'arch',      label:'A3', text:'Laravel backend extend vs rebuild', type:'opt' },
+  { id:'B1', sec:'avail',     label:'B1', text:'Suppliers in scope for Stage 1', type:'check' },
+  { id:'B2', sec:'avail',     label:'B2', text:'BB unavailability fallback behaviour', type:'opt' },
+  { id:'B3', sec:'avail',     label:'B3', text:'Stage 1 sign-off criteria', type:'check' },
+  { id:'C1', sec:'ordering',  label:'C1', text:'Order placement sequence confirmed', type:'check' },
+  { id:'C2', sec:'ordering',  label:'C2', text:'Order failure after payment — fallback', type:'opt' },
+  { id:'C3', sec:'ordering',  label:'C3', text:'AKJ write mechanism', type:'opt' },
+  { id:'C4', sec:'ordering',  label:'C4', text:'Order status sync — in Stage 2 or deferred', type:'opt' },
+  { id:'D1', sec:'products',  label:'D1', text:'Product mapping sheet status', type:'opt' },
+  { id:'D2', sec:'products',  label:'D2', text:'Catalogue mapping maintenance ownership', type:'opt' },
+  { id:'D3', sec:'products',  label:'D3', text:'Dynamic product content template', type:'check' },
+  { id:'E1', sec:'suppliers', label:'E1', text:'Supplier priority order confirmed', type:'opt' },
+  { id:'E2', sec:'suppliers', label:'E2', text:'Supplier priority admin interface location', type:'opt' },
+  { id:'E3', sec:'suppliers', label:'E3', text:'CityFibre routing status', type:'opt' },
+  { id:'F1', sec:'payment',   label:'F1', text:'Payment gateway unchanged', type:'opt' },
+  { id:'F2', sec:'payment',   label:'F2', text:'Pricing from POP catalogue only', type:'opt' },
+  { id:'G1', sec:'addons',    label:'G1', text:'Routers/add-ons excluded from Stage 1+2', type:'opt' },
+  { id:'G2', sec:'addons',    label:'G2', text:'Router/add-on selection in BB checkout flow', type:'opt' },
+  { id:'H1', sec:'akj',       label:'H1', text:'AKJ Task ID stored in POP confirmed', type:'opt' },
+  { id:'H2', sec:'akj',       label:'H2', text:'AKJ note text format', type:'text' },
+  { id:'I1', sec:'crm',       label:'I1', text:'CRM deferred — not in Stage 1 or 2', type:'opt' },
+  { id:'I2', sec:'crm',       label:'I2', text:'Data centralisation requirement in scope', type:'opt' },
+];
+
+const SECTIONS = ['arch','avail','ordering','products','suppliers','payment','addons','akj','crm','summary'];
+
+let current = 'arch';
+const answers = {};
+
+// ── NAVIGATION ───────────────────────────────────
+function goTo(sec) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('sec-' + sec).classList.add('active');
+  document.querySelector(`.nav-item[onclick="goTo('${sec}')"]`).classList.add('active');
+  document.getElementById('main-scroll').scrollTop = 0;
+  current = sec;
+  if (sec === 'summary') buildSummary();
+  updateProgress();
+}
+
+// ── SELECT OPTION ─────────────────────────────────
+function selectOpt(el, qid) {
+  const card = document.getElementById('qcard-' + qid);
+  if (!card) return;
+  card.querySelectorAll('.opt-row').forEach(r => r.classList.remove('selected'));
+  el.classList.add('selected');
+  answers[qid] = el.querySelector('.opt-label').textContent.trim().substring(0, 80);
+  updateStatus(qid);
+  updateProgress();
+}
+
+// ── TOGGLE CHECKLIST ─────────────────────────────
+function toggleCheck(el, qid) {
+  el.classList.toggle('ticked');
+  el.querySelector('.check-box').textContent = el.classList.contains('ticked') ? '✓' : '';
+  const card = document.getElementById('qcard-' + qid);
+  const ticked = card ? card.querySelectorAll('.check-row.ticked').length : 0;
+  answers[qid] = ticked > 0 ? ticked + ' items checked' : '';
+  updateStatus(qid);
+  updateProgress();
+}
+
+// ── UPDATE STATUS BAR ────────────────────────────
+function updateStatus(qid) {
+  const statusEl = document.getElementById('status-' + qid);
+  if (!statusEl) return;
+
+  // Check if there's a selection or text input
+  const card = document.getElementById('qcard-' + qid);
+  let hasOpt = card && card.querySelector('.opt-row.selected');
+  let hasCheck = card && card.querySelectorAll('.check-row.ticked').length > 0;
+  let hasText = false;
+  card && card.querySelectorAll('textarea, input[type="text"], input[type="date"]').forEach(t => {
+    if (t.value && t.value.trim().length > 2) hasText = true;
+  });
+
+  if (hasOpt || hasCheck) {
+    answers[qid] = answers[qid] || 'selected';
+    statusEl.className = 'q-status answered';
+    statusEl.innerHTML = '<div class="status-dot"></div>Answered';
+  } else if (hasText) {
+    answers[qid] = 'partial';
+    statusEl.className = 'q-status partial';
+    statusEl.innerHTML = '<div class="status-dot"></div>Partially answered';
+  } else {
+    delete answers[qid];
+    statusEl.className = 'q-status';
+    statusEl.innerHTML = '<div class="status-dot"></div>Not answered';
+  }
+
+  updateNavDots();
+  updateProgress();
+}
+
+// ── NAV DOTS ─────────────────────────────────────
+function updateNavDots() {
+  const secMap = {};
+  QUESTIONS.forEach(q => {
+    if (!secMap[q.sec]) secMap[q.sec] = { total: 0, answered: 0, partial: 0 };
+    secMap[q.sec].total++;
+    if (answers[q.id] === 'partial') secMap[q.sec].partial++;
+    else if (answers[q.id]) secMap[q.sec].answered++;
+  });
+
+  Object.entries(secMap).forEach(([sec, data]) => {
+    const dot = document.getElementById('dot-' + sec);
+    if (!dot) return;
+    dot.className = 'nav-dot';
+    if (data.answered === data.total) dot.classList.add('answered');
+    else if (data.answered > 0 || data.partial > 0) dot.classList.add('partial');
+  });
+}
+
+// ── PROGRESS ─────────────────────────────────────
+function updateProgress() {
+  const total = QUESTIONS.length;
+  const done = QUESTIONS.filter(q => answers[q.id] && answers[q.id] !== 'partial').length;
+  const pct = Math.round((done / total) * 100);
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-label').textContent = done + ' / ' + total + ' answered';
+}
+
+// ── SUMMARY ───────────────────────────────────────
+function buildSummary() {
+  const total = QUESTIONS.length;
+  const answered = QUESTIONS.filter(q => answers[q.id] && answers[q.id] !== 'partial').length;
+  const partial  = QUESTIONS.filter(q => answers[q.id] === 'partial').length;
+  const notDone  = total - answered - partial;
+  const blockers = ['A1','A2','C2','D1'];
+  const blockersDone = blockers.filter(id => answers[id] && answers[id] !== 'partial').length;
+
+  document.getElementById('summary-stats').innerHTML = `
+    <div class="summary-stat green"><div class="num">${answered}</div><div class="lbl">Fully answered</div></div>
+    <div class="summary-stat amber"><div class="num">${partial}</div><div class="lbl">Partially answered</div></div>
+    <div class="summary-stat red"><div class="num">${notDone}</div><div class="lbl">Not answered</div></div>
+    <div class="summary-stat blue"><div class="num">${blockersDone}/${blockers.length}</div><div class="lbl">Blockers resolved</div></div>
+  `;
+
+  let html = '';
+  QUESTIONS.forEach(q => {
+    const isAnswered = answers[q.id] && answers[q.id] !== 'partial';
+    const isPartial  = answers[q.id] === 'partial';
+    const statusCol  = isAnswered ? 'var(--green)' : isPartial ? 'var(--amber)' : 'var(--red)';
+    const statusTxt  = isAnswered ? 'Answered' : isPartial ? 'Partial' : 'Not answered';
+    const isBlocker  = blockers.includes(q.id);
+    html += `
+      <div class="summary-row" style="cursor:pointer" onclick="goTo('${q.sec}')">
+        <div class="summary-qnum">${q.label}${isBlocker ? ' 🔴' : ''}</div>
+        <div class="summary-qtxt">${q.text}</div>
+        <div style="font-size:11px;font-weight:700;color:${statusCol};white-space:nowrap;padding-top:2px;">${statusTxt}</div>
+      </div>`;
+  });
+  document.getElementById('summary-list').innerHTML = html;
+}
+
+// ── EXPORT ───────────────────────────────────────
+function exportSummary() {
+  let out = 'POP TELECOM x BROADBAND BUDDY\nIntegration Clarification Form - Answers\nExported: ' + new Date().toLocaleDateString('en-GB') + '\n\n';
+  out += '='.repeat(60) + '\n\n';
+
+  QUESTIONS.forEach(q => {
+    out += `[${q.label}] ${q.text}\n`;
+    const card = document.getElementById('qcard-' + q.label.replace(/\d/,'').toLowerCase() + '...');
+
+    // Get selected option
+    const secEl = document.getElementById('sec-' + q.sec);
+    const qcard = secEl ? secEl.querySelector(`#qcard-${q.id}`) : null;
+    if (qcard) {
+      const sel = qcard.querySelector('.opt-row.selected .opt-label');
+      if (sel) out += 'Selection: ' + sel.textContent.trim().substring(0,120) + '\n';
+
+      const ticked = qcard.querySelectorAll('.check-row.ticked .check-label');
+      if (ticked.length) {
+        out += 'Checked:\n';
+        ticked.forEach(t => out += '  - ' + t.textContent.trim() + '\n');
+      }
+
+      qcard.querySelectorAll('textarea, input[type="text"], input[type="date"]').forEach(t => {
+        if (t.value && t.value.trim()) {
+          out += 'Notes: ' + t.value.trim() + '\n';
+        }
+      });
+    }
+
+    const status = answers[q.id] ? (answers[q.id] === 'partial' ? 'PARTIAL' : 'ANSWERED') : 'NOT ANSWERED';
+    out += 'Status: ' + status + '\n';
+    out += '-'.repeat(50) + '\n';
+  });
+
+  const blob = new Blob([out], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'POP_BB_Clarification_Answers_' + new Date().toISOString().slice(0,10) + '.txt';
+  a.click();
+}
+
+// Init
+updateProgress();
+</script>
+</body>
+</html>

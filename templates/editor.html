@@ -1,0 +1,126 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Edit: {{ artefact.title }} - Facilities Management{% endblock %}
+
+{% block sidebar %}
+    {% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-title">
+    <h1>{{ artefact.title }}</h1>
+    <p>{% if artefact.artefact_type == 'engagement' %}Inspection Report{% elif artefact.artefact_type == 'incident' %}Incident Report{% elif artefact.artefact_type == 'investigation' %}Investigation{% elif artefact.artefact_type == 'assessment' %}Assessment{% else %}{{ artefact.artefact_type|title }}{% endif %} · {{ artefact.status }}</p>
+</div>
+<div class="topbar-actions">
+    <button type="button" class="btn btn-secondary" id="btn-preview">Preview Report</button>
+    <button type="button" class="btn btn-primary" id="btn-save-version"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg> Save Version</button>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="editor-container" data-artefact-id="{{ artefact.id }}">
+    <input type="hidden" id="artefact-id" value="{{ artefact.id }}">
+    <input type="hidden" id="artefact-type" value="{{ artefact.artefact_type }}">
+    
+    <!-- Meta Section -->
+    <div class="editor-section">
+        <h2>Report Details</h2>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Title</label>
+                <input type="text" id="meta-title" value="{{ artefact.title }}" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Status</label>
+                <select id="meta-status" class="form-control">
+                    <option value="Draft" {% if artefact.status == 'Draft' %}selected{% endif %}>Draft</option>
+                    <option value="In Review" {% if artefact.status == 'In Review' %}selected{% endif %}>In Review</option>
+                    <option value="Final" {% if artefact.status == 'Final' %}selected{% endif %}>Final</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Lead Analyst</label>
+                <input type="text" id="meta-analyst" placeholder="Your name" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Date</label>
+                <input type="date" id="meta-date" class="form-control">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Context Section (Batch 2) -->
+    <div class="editor-section context-section">
+        <h2>Context Layer</h2>
+        <p class="section-help">Define the analysis context to drive all modules consistently</p>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Journey</label>
+                <select id="context-journey" class="form-control">
+                    <option value="">Select journey...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Incident Type</label>
+                <select id="context-incident-type" class="form-control">
+                    <option value="">Select incident type...</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Primary Audience</label>
+                <select id="context-audience" class="form-control">
+                    <option value="">Select audience...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Analysis Framework</label>
+                <select id="context-framework" class="form-control">
+                    <option value="">Select framework...</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Framework Version</label>
+                <select id="context-framework-version" class="form-control">
+                    <option value="">Select version...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <!-- Spacer for grid alignment -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Version Notes -->
+    <div class="editor-section">
+        <h2><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg> Version Notes</h2>
+        <textarea id="version-notes" placeholder="What changed in this version?" rows="3" class="form-control"></textarea>
+    </div>
+    
+    <!-- Save Confirmation -->
+    <div id="save-confirmation" class="save-confirmation hidden">
+        <div class="save-confirmation-content">
+            <h3><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon" style="color:#10b981"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg> Version Saved</h3>
+            <p>Version <span id="saved-version-no"></span> saved successfully</p>
+            <a href="#" id="saved-version-link" class="btn btn-primary">View Version</a>
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('save-confirmation').classList.add('hidden')">Continue Editing</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/engine/editor.js') }}"></script><script>
+// Initialize editor with server-side data
+initEditor(
+    {{ artefact.id }},
+    '{{ artefact.artefact_type }}',
+    {{ payload|tojson|safe if payload else 'null' }}
+);
+</script>
+{% endblock %}

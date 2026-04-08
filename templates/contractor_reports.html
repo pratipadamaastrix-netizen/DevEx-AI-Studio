@@ -1,0 +1,104 @@
+{% extends 'layouts/app.html' %}
+
+{% block title %}Contractor Reports - Facilities Management{% endblock %}
+
+{% block sidebar %}
+    {% set active_nav = 'contractor_reports' %}
+    {% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block topbar %}
+    {% set page_title = 'Contractor Reports' %}
+    {% set page_subtitle = 'Legacy contractor reports' %}
+    {% include 'components/topbar.html' %}
+{% endblock %}
+
+{% block content %}
+<!-- CF1.3: Legacy Deprecation Banner -->
+<style>
+.deprecation-banner {
+    background: #FEF3C7;
+    border: 2px solid #F59E0B;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.banner-content {
+    color: #92400E;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.banner-content strong {
+    font-weight: 700;
+    color: #78350F;
+}
+
+.banner-action {
+    flex-shrink: 0;
+}
+
+.btn-migrate {
+    display: inline-block;
+    padding: 10px 20px;
+    background: #F59E0B;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.btn-migrate:hover {
+    background: #D97706;
+}
+
+@media (max-width: 768px) {
+    .deprecation-banner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+</style>
+
+<div class="deprecation-banner">
+    <div class="banner-content">
+        <strong><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Legacy Page</strong> - This is a legacy page. Please use the FM Dashboard or Estate Inspections instead.
+    </div>
+    <div class="banner-action">
+        <a href="/fire-door/reports" class="btn-migrate">Go to Fire Door Reports →</a>
+    </div>
+</div>
+
+<!-- Original content below -->
+    {% if reports|length > 0 %}
+        {% include 'components/card_grid.html' %}
+    {% else %}
+        {% include 'components/empty_state.html' %}
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function deleteReport(id) {
+    if (!confirm('Delete this report permanently? This will also delete all associated photos.')) return;
+    
+    try {
+        const response = await fetch(`/api/reports/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+            location.reload();
+        }
+    } catch (error) {
+        console.error('Delete failed:', error);
+        alert('Failed to delete report. Please try again.');
+    }
+}
+</script>
+{% endblock %}

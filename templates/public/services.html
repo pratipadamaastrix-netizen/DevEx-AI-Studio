@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Services — Devex AI Studios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dx.css') }}">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: #F8FAFC; color: #1E293B; }
+
+.nav { background: #0D1117; border-bottom: 1px solid rgba(255,255,255,.07); padding: 0 48px;
+       display: flex; align-items: center; justify-content: space-between; height: 64px; }
+.nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; font-size: 15px; font-weight: 700; }
+.nav-brand .mark { width: 30px; height: 30px; background: #2563EB; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; }
+.nav-links { display: flex; align-items: center; gap: 28px; }
+.nav-links a { color: #8B949E; text-decoration: none; font-size: 14px; font-weight: 500; transition: color .15s; }
+.nav-links a:hover, .nav-links a.active { color: #fff; }
+.nav-cta { background: #2563EB; color: #fff !important; padding: 8px 18px; border-radius: 7px; font-weight: 600 !important; }
+
+.page-hero { background: #0D1117; color: #fff; padding: 64px 48px 48px; text-align: center; }
+.page-hero-title { font-size: clamp(28px,4vw,44px); font-weight: 700; color: #F1F5F9; margin-bottom: 14px; }
+.page-hero-sub { font-size: 17px; color: #8B949E; max-width: 500px; margin: 0 auto; line-height: 1.6; }
+
+.section { padding: 64px 48px; max-width: 1200px; margin: 0 auto; }
+
+.services-detail { display: grid; gap: 20px; }
+
+.svc-row {
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 32px;
+    display: grid;
+    grid-template-columns: 60px 1fr auto;
+    gap: 24px;
+    align-items: start;
+    transition: border-color .2s, box-shadow .2s;
+}
+
+.svc-row:hover {
+    border-color: #BFDBFE;
+    box-shadow: 0 4px 20px rgba(37,99,235,.06);
+}
+
+.svc-icon { font-size: 28px; padding-top: 4px; }
+
+.svc-name { font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 8px; }
+.svc-desc { font-size: 14px; color: #64748B; line-height: 1.7; margin-bottom: 14px; }
+
+.svc-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.svc-tag { background: #F1F5F9; color: #475569; border-radius: 4px; padding: 3px 10px; font-size: 11px; font-weight: 600; }
+
+.svc-cta { flex-shrink: 0; }
+
+footer { background: #0D1117; border-top: 1px solid rgba(255,255,255,.07); padding: 40px 48px;
+         display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.footer-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #8B949E; font-size: 14px; }
+.footer-brand .mark { width: 26px; height: 26px; background: #2563EB; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: #fff; }
+.footer-links { display: flex; gap: 24px; }
+.footer-links a { color: #64748B; text-decoration: none; font-size: 13px; }
+.footer-links a:hover { color: #8B949E; }
+
+@media (max-width: 768px) {
+    .nav, .page-hero, .section, footer { padding-left: 20px; padding-right: 20px; }
+    .svc-row { grid-template-columns: 40px 1fr; }
+    .svc-cta { grid-column: 1 / -1; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+    <a href="/" class="nav-brand"><div class="mark">DX</div>Devex AI Studios</a>
+    <div class="nav-links">
+        <a href="/services" class="active">Services</a>
+        <a href="/quote">Get a Quote</a>
+        <a href="/contact">Contact</a>
+        <a href="/projects" class="nav-cta">Client Login</a>
+    </div>
+</nav>
+
+<div class="page-hero">
+    <h1 class="page-hero-title">Our Services</h1>
+    <p class="page-hero-sub">Everything you need to design, build, and grow your digital product.</p>
+</div>
+
+<section class="section">
+    <div class="services-detail">
+
+        <div class="svc-row">
+            <div class="svc-icon">🌐</div>
+            <div>
+                <div class="svc-name">Website Design &amp; Development</div>
+                <div class="svc-desc">
+                    From a single landing page to a full multi-page brochure site. We build fast,
+                    accessible, mobile-first websites using modern frameworks. Every site includes
+                    basic SEO setup, contact forms, and analytics integration.
+                </div>
+                <div class="svc-tags">
+                    <span class="svc-tag">Brochure Sites</span>
+                    <span class="svc-tag">Landing Pages</span>
+                    <span class="svc-tag">Portfolio</span>
+                    <span class="svc-tag">Blog &amp; CMS</span>
+                    <span class="svc-tag">SEO</span>
+                </div>
+            </div>
+            <div class="svc-cta">
+                <a href="/quote" class="dx-btn dx-btn-primary">Get Estimate</a>
+            </div>
+        </div>
+
+        <div class="svc-row">
+            <div class="svc-icon">⚙️</div>
+            <div>
+                <div class="svc-name">Web Application Development</div>
+                <div class="svc-desc">
+                    Custom platforms, dashboards, and internal tools with full user authentication,
+                    data management, role-based access, and workflow automation. We build backends
+                    that scale and frontends that are intuitive to use.
+                </div>
+                <div class="svc-tags">
+                    <span class="svc-tag">SaaS Platforms</span>
+                    <span class="svc-tag">Admin Dashboards</span>
+                    <span class="svc-tag">Internal Tools</span>
+                    <span class="svc-tag">APIs</span>
+                    <span class="svc-tag">Databases</span>
+                </div>
+            </div>
+            <div class="svc-cta">
+                <a href="/quote" class="dx-btn dx-btn-primary">Get Estimate</a>
+            </div>
+        </div>
+
+        <div class="svc-row">
+            <div class="svc-icon">📱</div>
+            <div>
+                <div class="svc-name">Mobile App Development</div>
+                <div class="svc-desc">
+                    iOS and Android applications built for real-world use. Consumer-facing apps,
+                    enterprise tools, and hybrid solutions that work across platforms. Includes
+                    push notifications, offline mode, and app store submission support.
+                </div>
+                <div class="svc-tags">
+                    <span class="svc-tag">iOS</span>
+                    <span class="svc-tag">Android</span>
+                    <span class="svc-tag">React Native</span>
+                    <span class="svc-tag">Push Notifications</span>
+                    <span class="svc-tag">App Store</span>
+                </div>
+            </div>
+            <div class="svc-cta">
+                <a href="/quote" class="dx-btn dx-btn-primary">Get Estimate</a>
+            </div>
+        </div>
+
+        <div class="svc-row">
+            <div class="svc-icon">🤖</div>
+            <div>
+                <div class="svc-name">AI Integration &amp; Automation</div>
+                <div class="svc-desc">
+                    Embed AI into your product or build AI-first tools. We integrate language models,
+                    classification systems, and automation pipelines that handle real business tasks.
+                    Chatbots, document processing, content generation, and intelligent workflows.
+                </div>
+                <div class="svc-tags">
+                    <span class="svc-tag">LLM Integration</span>
+                    <span class="svc-tag">Chatbots</span>
+                    <span class="svc-tag">Document AI</span>
+                    <span class="svc-tag">Classification</span>
+                    <span class="svc-tag">Automation</span>
+                </div>
+            </div>
+            <div class="svc-cta">
+                <a href="/quote" class="dx-btn dx-btn-primary">Get Estimate</a>
+            </div>
+        </div>
+
+        <div class="svc-row">
+            <div class="svc-icon">🛒</div>
+            <div>
+                <div class="svc-name">eCommerce &amp; Payments</div>
+                <div class="svc-desc">
+                    Online stores, subscription platforms, and marketplace solutions.
+                    Payment processing via Stripe, order management, customer accounts,
+                    discount codes, and inventory management.
+                </div>
+                <div class="svc-tags">
+                    <span class="svc-tag">Online Stores</span>
+                    <span class="svc-tag">Stripe</span>
+                    <span class="svc-tag">Subscriptions</span>
+                    <span class="svc-tag">Order Management</span>
+                    <span class="svc-tag">Marketplace</span>
+                </div>
+            </div>
+            <div class="svc-cta">
+                <a href="/quote" class="dx-btn dx-btn-primary">Get Estimate</a>
+            </div>
+        </div>
+
+        <div class="svc-row">
+            <div class="svc-icon">🔧</div>
+            <div>
+                <div class="svc-name">Maintenance &amp; Support</div>
+                <div class="svc-desc">
+                    Ongoing retainer support for sites and apps we have built, or third-party
+                    systems you need maintained. Bug fixes, security updates, feature additions,
+                    and performance monitoring.
+                </div>
+                <div class="svc-tags">
+                    <span class="svc-tag">Monthly Retainer</span>
+                    <span class="svc-tag">Bug Fixes</span>
+                    <span class="svc-tag">Security Updates</span>
+                    <span class="svc-tag">Feature Additions</span>
+                </div>
+            </div>
+            <div class="svc-cta">
+                <a href="/contact" class="dx-btn dx-btn-secondary">Enquire</a>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<footer>
+    <a href="/" class="footer-brand"><div class="mark">DX</div>Devex AI Studios</a>
+    <div class="footer-links">
+        <a href="/services">Services</a>
+        <a href="/quote">Get a Quote</a>
+        <a href="/contact">Contact</a>
+        <a href="/projects">Client Login</a>
+    </div>
+    <div style="color:#475569;font-size:12px;">&copy; 2026 Devex AI Studios.</div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,117 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Version History - {{ report.title }}{% endblock %}
+
+{% block sidebar %}
+    {% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-title">
+    <h1>Version History</h1>
+    <p>{{ report.title }}</p>
+</div>
+<div class="topbar-actions">
+    <a href="/artefacts/{{ report.id }}/edit" class="btn btn-primary"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg> Continue Editing</a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="versions-container">
+    <div class="versions-header">
+        <h2>All Versions ({{ versions|length }})</h2>
+        <p>Each version is an immutable snapshot of the report at a point in time.</p>
+    </div>
+    
+    <div class="versions-list">
+        {% for version in versions %}
+        <div class="version-card {% if loop.first %}latest{% endif %}">
+            <div class="version-number">
+                <span class="version-badge">v{{ version.version_no }}</span>
+                {% if loop.first %}
+                <span class="latest-badge">Latest</span>
+                {% endif %}
+            </div>
+            
+            <div class="version-details">
+                <div class="version-meta">
+                    <div class="meta-row">
+                        <strong>Created:</strong> {{ version.created_at }}
+                    </div>
+                    {% if version.created_by %}
+                    <div class="meta-row">
+                        <strong>By:</strong> {{ version.created_by }}
+                    </div>
+                    {% endif %}
+                    {% if version.version_notes %}
+                    <div class="meta-row">
+                        <strong>Notes:</strong> {{ version.version_notes }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="version-actions">
+                <a href="/artefacts/{{ report.id }}/v/{{ version.version_no }}" class="btn btn-secondary btn-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> View
+                </a>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="createShareLink({{ report.id }}, {{ version.version_no }})">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg> Share
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+        
+        {% if versions|length == 0 %}
+        <div class="empty-state">
+            <h3>No versions yet</h3>
+            <p>Save your first version from the editor</p>
+            <a href="/artefacts/{{ report.id }}/edit" class="btn btn-primary">Go to Editor</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Share Link Modal -->
+<div id="share-modal" class="modal hidden">
+    <div class="modal-content">
+        <h3>Share Link Created</h3>
+        <p>Anyone with this link can view this version:</p>
+        <div class="share-link-box">
+            <input type="text" id="share-link-url" readonly class="form-control">
+            <button type="button" class="btn btn-primary" onclick="copyShareLink()">Copy</button>
+        </div>
+        <button type="button" class="btn btn-secondary" onclick="closeShareModal()">Close</button>
+    </div>
+</div>
+
+
+{% endblock %}
+{% block scripts %}
+<script>
+async function createShareLink(artefactId, versionNo) {
+    try {
+        const r = await fetch(`/api/artefacts/${artefactId}/share`, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({version_no: versionNo})
+        });
+        const d = await r.json();
+        const url = d.share_url || window.location.origin + `/artefacts/${artefactId}/v/${versionNo}`;
+        document.getElementById('share-link-url').value = url;
+        document.getElementById('share-modal').classList.remove('hidden');
+    } catch(e) {
+        alert('Could not generate share link');
+    }
+}
+function copyShareLink() {
+    const input = document.getElementById('share-link-url');
+    input.select();
+    document.execCommand('copy');
+    alert('Link copied');
+}
+function closeShareModal() {
+    document.getElementById('share-modal').classList.add('hidden');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,514 @@
+{% extends 'layouts/app.html' %}
+
+{% block title %}{{ ticket.ref }} — FM Operations{% endblock %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/fm.css') }}">
+{% endblock %}
+
+{% block sidebar %}
+    {% set active_nav = 'fm_dashboard' %}
+    {% include 'components/sidebar.html' %}
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-title">
+    <h1 style="font-family:var(--mono,monospace);letter-spacing:0.5px">{{ ticket.ref }}</h1>
+    <p>{{ ticket.summary[:80] }}{% if ticket.summary|length > 80 %}…{% endif %}</p>
+</div>
+<div class="topbar-actions">
+    <a href="/fm/dashboard" class="btn btn-secondary">← Back to Dashboard</a>
+    <button class="btn btn-primary" onclick="FMT.saveTicket()">Save Changes</button>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="fm-app" id="fm-ticket-page">
+
+    <!-- Ticket header bar -->
+    <div class="fm-topbar">
+        <div>
+            <h1 style="font-family:var(--mono,monospace)">{{ ticket.ref }}</h1>
+            <div class="fm-meta">
+                Created {{ ticket.created_at[:16] }} UTC ·
+                Updated {{ ticket.updated_at[:16] }} UTC ·
+                Source: {{ ticket.source }}
+            </div>
+        </div>
+        <div class="fm-topbar-right">
+            <!-- Status badge -->
+            <span class="fm-badge
+                {%- if ticket.status == 'DONE' %} good
+                {%- elif ticket.status in ('BLOCKED','CANCELLED') %} bad
+                {%- else %} warn
+                {%- endif %}">{{ ticket.status }}</span>
+
+            <span class="fm-badge
+                {%- if ticket.priority == 'urgent' %} bad
+                {%- elif ticket.priority == 'low' %} good
+                {%- else %} warn
+                {%- endif %}">{{ ticket.priority }}</span>
+
+            <span class="fm-badge info">{{ ticket.category }}</span>
+
+            <button class="fm-btn" onclick="FMT.markStatus('DONE')">Mark Done</button>
+            <button class="fm-btn" onclick="FMT.markStatus('IN_PROGRESS')">In Progress</button>
+        </div>
+    </div>
+
+    <!-- Main three-column layout: conversation | details | evidence -->
+    <div class="fmt-layout">
+
+        <!-- LEFT: Conversation thread -->
+        <div class="fm-card fmt-conversation">
+            <div class="fm-section-title">
+                <h2>Conversation Thread</h2>
+                <div class="fm-badges">
+                    <span class="fm-badge warn" id="fmt-status-badge">{{ ticket.status }}</span>
+                    <span class="fm-badge info">{{ ticket.category }}</span>
+                    <span class="fm-badge
+                        {%- if ticket.priority == 'urgent' %} bad
+                        {%- elif ticket.priority == 'low' %} good
+                        {%- else %} warn
+                        {%- endif %}">{{ ticket.priority }}</span>
+                </div>
+            </div>
+
+            <div class="fm-chatlog" id="fmt-chatlog">
+                {% if messages %}
+                    {% for msg in messages %}
+                    <div class="fm-msg {% if msg.sender == 'customer' %}customer{% elif msg.sender == 'ai' %}ai{% endif %}">
+                        <div class="fm-mmeta">
+                            {{ msg.created_at[:16] }} UTC ·
+                            {{ msg.sender }} ·
+                            {{ msg.source or '' }}
+                            {% if msg.is_internal %}<span class="fm-badge" style="font-size:10px;padding:2px 6px;margin-left:6px">internal</span>{% endif %}
+                        </div>
+                        <div class="fm-mbody">{{ msg.body }}</div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="padding:40px;text-align:center;color:var(--muted2);font-size:13px">
+                        No messages in this thread yet.
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Reply bar -->
+            <div style="margin-top:12px">
+                <div class="fmt-reply-tabs" style="display:flex;gap:6px;margin-bottom:10px">
+                    <div class="fm-tab active" id="rt-customer" onclick="FMT.setReplyMode('customer',this)">To Customer</div>
+                    <div class="fm-tab" id="rt-internal" onclick="FMT.setReplyMode('internal',this)">Internal Note</div>
+                </div>
+                <div class="fm-chatbar">
+                    <textarea class="fm-input" id="fmt-reply" style="min-height:72px;flex:1;resize:vertical"
+                              placeholder="Type message to customer or internal note…"></textarea>
+                </div>
+                <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;flex-wrap:wrap">
+                    <button class="fm-btn" onclick="FMT.getAIDraft()">AI Draft</button>
+                    <button class="fm-btn primary" onclick="FMT.sendReply()">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MIDDLE: Ticket detail fields -->
+        <div class="fm-card fmt-details">
+            <div class="fm-section-title">
+                <h2>Ticket Details</h2>
+                <span class="fm-chip fm-mono">{{ ticket.ref }}</span>
+            </div>
+
+            <div class="fm-kv">
+                <div class="fm-field">
+                    <label>Estate</label>
+                    <input class="fm-input" id="d-estate" value="{{ ticket.estate }}" />
+                </div>
+                <div class="fm-field">
+                    <label>Unit</label>
+                    <input class="fm-input" id="d-unit" value="{{ ticket.unit }}" />
+                </div>
+                <div class="fm-field">
+                    <label>Customer</label>
+                    <input class="fm-input" id="d-customer" value="{{ ticket.customer }}" />
+                </div>
+                <div class="fm-field">
+                    <label>Channel</label>
+                    <select class="fm-select" id="d-source">
+                        {% for ch in ['webchat','whatsapp','whatsapp_json','manual','system'] %}
+                        <option {% if ticket.source == ch %}selected{% endif %}>{{ ch }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="fm-field">
+                    <label>Status</label>
+                    <select class="fm-select" id="d-status">
+                        {% for s in ['NEW','TRIAGED','ASSIGNED','IN_PROGRESS','WAITING_CUSTOMER','BLOCKED','DONE','CANCELLED'] %}
+                        <option {% if ticket.status == s %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="fm-field">
+                    <label>Priority</label>
+                    <select class="fm-select" id="d-priority">
+                        {% for p in ['low','normal','urgent'] %}
+                        <option {% if ticket.priority == p %}selected{% endif %}>{{ p }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="fm-field">
+                    <label>Category</label>
+                    <select class="fm-select" id="d-category">
+                        {% for c in ['general','electrical','plumbing','hvac','security','carpentry','cleaning','painting','pest_control'] %}
+                        <option {% if ticket.category == c %}selected{% endif %}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="fm-field">
+                    <label>Assignee</label>
+                    <input class="fm-input" id="d-assignee" value="{{ ticket.assignee or '' }}" placeholder="Name or team" />
+                </div>
+                <div class="fm-field wide">
+                    <label>Summary</label>
+                    <input class="fm-input" id="d-summary" value="{{ ticket.summary }}" />
+                </div>
+                <div class="fm-field wide">
+                    <label>Materials / Notes</label>
+                    <textarea class="fm-input" id="d-materials" style="min-height:86px">{{ ticket.materials or '' }}</textarea>
+                </div>
+                <div class="fm-field wide">
+                    <label>Location Note</label>
+                    <textarea class="fm-input" id="d-location" style="min-height:80px">{{ ticket.location_note or '' }}</textarea>
+                </div>
+            </div>
+
+            <div class="fm-hr"></div>
+            <div class="fm-actions">
+                <button class="fm-btn" onclick="FMT.saveTicket()">Save</button>
+                <button class="fm-btn" onclick="FMT.markStatus('WAITING_CUSTOMER')">Request Access Window</button>
+                <button class="fm-btn primary" onclick="FMT.markStatus('IN_PROGRESS')">Mark In Progress</button>
+            </div>
+        </div>
+
+        <!-- RIGHT: Evidence + event log -->
+        <div class="fmt-sidebar-col">
+
+            <!-- Evidence panel -->
+            <div class="fm-card">
+                <div class="fm-section-title">
+                    <h2>Diagnostics &amp; Evidence</h2>
+                    <span class="fm-chip"><span class="fm-mono">Photos</span> {{ evidence|length }} attached</span>
+                </div>
+
+                <div class="fm-field" style="margin-bottom:12px">
+                    <label>Location note</label>
+                    <textarea class="fm-input" id="loc-note" style="min-height:100px">{{ ticket.location_note or '' }}</textarea>
+                </div>
+
+                <div class="fm-hr"></div>
+
+                <div class="fm-field" style="margin-bottom:12px">
+                    <label>Photo attachments</label>
+                    <div class="fm-thumbs" id="fmt-thumbs">
+                        {% if evidence %}
+                            {% for ev in evidence %}
+                            <div class="fm-thumb" title="{{ ev.original_filename or ev.filename }}">IMG</div>
+                            {% endfor %}
+                        {% endif %}
+                        <!-- Upload slots -->
+                        <div class="fm-thumb" onclick="document.getElementById('fmt-file-input').click()">+</div>
+                        <div class="fm-thumb" onclick="document.getElementById('fmt-file-input').click()">+</div>
+                    </div>
+                    <input type="file" id="fmt-file-input" multiple accept="image/*,.pdf"
+                           style="display:none" onchange="FMT.uploadEvidence(this.files)" />
+                    <button class="fm-btn" style="margin-top:8px;width:100%"
+                            onclick="document.getElementById('fmt-file-input').click()">
+                        + Add Photo / Document
+                    </button>
+                </div>
+
+                <div class="fm-hr"></div>
+
+                <!-- Room tasks -->
+                <div class="fm-rooms" id="fmt-rooms">
+                    <div style="font-size:12px;color:var(--muted2);margin-bottom:8px;font-weight:700">Room Tasks</div>
+                    <div class="fm-room">
+                        <div class="rt">{{ ticket.category|title }} inspection</div>
+                        <div class="rs">{{ ticket.location_note or 'Document findings and capture photos for every area inspected.' }}</div>
+                    </div>
+                    <div class="fm-room">
+                        <div class="rt">Notes</div>
+                        <div class="rs">Record all changes in the ticket thread. Store photos for audit and handover.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inbound events for this ticket -->
+            <div class="fm-card" style="margin-top:12px">
+                <div class="fm-section-title">
+                    <h2>Ticket Events</h2>
+                    <span class="fm-chip fm-mono">{{ events|length }}</span>
+                </div>
+                <div class="fm-table-wrap">
+                    <table class="fm-table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Source</th>
+                                <th>Received</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if events %}
+                                {% for ev in events %}
+                                <tr>
+                                    <td>{{ ev.event_type }}</td>
+                                    <td>{{ ev.source }}</td>
+                                    <td>{{ ev.received_at[:16] }}</td>
+                                    <td>
+                                        <span class="fm-badge {% if ev.status == 'processed' %}good{% elif ev.status == 'error' %}bad{% else %}warn{% endif %}">
+                                            {{ ev.status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr><td colspan="4" style="text-align:center;color:var(--muted2)">No events</td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div><!-- /fmt-sidebar-col -->
+
+    </div><!-- /fmt-layout -->
+
+</div><!-- /fm-app -->
+
+<!-- Toast -->
+<div class="fm-toast" id="fmt-toast"></div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/fm/import.js') }}"></script>
+<script>
+// =============================================================================
+// FM Ticket Detail Page — FMT namespace
+// Batch FM2
+// =============================================================================
+const FMT = (() => {
+    'use strict';
+
+    const REF = '{{ ticket.ref }}';
+    let _replyInternal = false;
+
+    // ---- Reply mode ----
+    function setReplyMode(mode, el) {
+        _replyInternal = (mode === 'internal');
+        document.querySelectorAll('.fmt-reply-tabs .fm-tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        const ta = document.getElementById('fmt-reply');
+        ta.placeholder = _replyInternal
+            ? 'Add internal note (not visible to customer)…'
+            : 'Type message to customer…';
+    }
+
+    // ---- Send reply ----
+    async function sendReply() {
+        const body = document.getElementById('fmt-reply').value.trim();
+        if (!body) return toast('Enter a message first', 'error');
+
+        try {
+            const r = await fetch(`/fm/api/tickets/${REF}/messages`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({
+                    body,
+                    sender: _replyInternal ? 'staff' : 'staff',
+                    source: 'staff',
+                    is_internal: _replyInternal
+                })
+            });
+            if (r.ok) {
+                document.getElementById('fmt-reply').value = '';
+                await _refreshThread();
+                toast('Message sent', 'success');
+            } else {
+                toast('Failed to send', 'error');
+            }
+        } catch(e) {
+            toast('Network error', 'error');
+        }
+    }
+
+    async function _refreshThread() {
+        const r = await fetch(`/fm/api/tickets/${REF}/messages`);
+        const msgs = await r.json();
+        const log = document.getElementById('fmt-chatlog');
+        if (!msgs.length) return;
+
+        log.innerHTML = msgs.map(m => {
+            const cls = m.sender === 'customer' ? 'customer' : m.sender === 'ai' ? 'ai' : '';
+            const internalBadge = m.is_internal
+                ? '<span class="fm-badge" style="font-size:10px;padding:2px 6px;margin-left:6px">internal</span>'
+                : '';
+            return `<div class="fm-msg ${cls}">
+                <div class="fm-mmeta">${_esc(m.created_at.slice(0,16))} UTC · ${_esc(m.sender)} · ${_esc(m.source||'')}${internalBadge}</div>
+                <div class="fm-mbody">${_esc(m.body)}</div>
+            </div>`;
+        }).join('');
+        log.scrollTop = log.scrollHeight;
+    }
+
+    // ---- AI Draft ----
+    async function getAIDraft() {
+        const summary = document.getElementById('d-summary').value;
+        const status  = document.getElementById('d-status').value;
+        try {
+            const r = await fetch('/fm/api/classify', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({text: summary + ' Status: ' + status})
+            });
+            const d = await r.json();
+            document.getElementById('fmt-reply').value = d.draft_reply || '';
+            toast('AI draft loaded', 'success');
+        } catch(e) {
+            toast('Classify failed', 'error');
+        }
+    }
+
+    // ---- Save ticket ----
+    async function saveTicket() {
+        const payload = {
+            estate:       document.getElementById('d-estate').value,
+            unit:         document.getElementById('d-unit').value,
+            customer:     document.getElementById('d-customer').value,
+            source:       document.getElementById('d-source').value,
+            status:       document.getElementById('d-status').value,
+            priority:     document.getElementById('d-priority').value,
+            category:     document.getElementById('d-category').value,
+            assignee:     document.getElementById('d-assignee').value,
+            summary:      document.getElementById('d-summary').value,
+            materials:    document.getElementById('d-materials').value,
+            location_note:document.getElementById('d-location').value,
+        };
+
+        try {
+            const r = await fetch(`/fm/api/tickets/${REF}`, {
+                method: 'PATCH',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify(payload)
+            });
+            if (r.ok) {
+                toast('Saved', 'success');
+                // Update status badge
+                document.getElementById('fmt-status-badge').textContent = payload.status;
+            } else {
+                const e = await r.json();
+                toast('Save failed: ' + (e.error || ''), 'error');
+            }
+        } catch(e) {
+            toast('Network error', 'error');
+        }
+    }
+
+    async function markStatus(status) {
+        document.getElementById('d-status').value = status;
+        await saveTicket();
+    }
+
+    // ---- Evidence upload ----
+    async function uploadEvidence(files) {
+        if (!files || !files.length) return;
+
+        for (const file of files) {
+            const fd = new FormData();
+            fd.append('file', file);
+            fd.append('ref', REF);
+            fd.append('caption', '');
+
+            try {
+                const r = await fetch('/fm/api/evidence', {method: 'POST', body: fd});
+                if (r.ok) {
+                    toast(`Uploaded ${file.name}`, 'success');
+                    _addThumb(file.name);
+                } else {
+                    toast(`Upload failed: ${file.name}`, 'error');
+                }
+            } catch(e) {
+                toast('Upload error', 'error');
+            }
+        }
+    }
+
+    function _addThumb(name) {
+        const thumbs = document.getElementById('fmt-thumbs');
+        const div = document.createElement('div');
+        div.className = 'fm-thumb';
+        div.title = name;
+        div.textContent = 'IMG';
+        thumbs.insertBefore(div, thumbs.firstChild);
+    }
+
+    // ---- Toast ----
+    function toast(msg, type) {
+        const el = document.getElementById('fmt-toast');
+        el.textContent = msg;
+        el.className = `fm-toast show ${type || ''}`;
+        clearTimeout(el._t);
+        el._t = setTimeout(() => el.classList.remove('show'), 3200);
+    }
+
+    function _esc(s) {
+        return String(s)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ---- Init ----
+    function _init() {
+        const log = document.getElementById('fmt-chatlog');
+        if (log) log.scrollTop = log.scrollHeight;
+    }
+
+    document.addEventListener('DOMContentLoaded', _init);
+
+    return { setReplyMode, sendReply, getAIDraft, saveTicket, markStatus, uploadEvidence, toast };
+})();
+</script>
+
+<style>
+/* Ticket detail page layout — 3-column above app.html container */
+.fmt-layout {
+    display: grid;
+    grid-template-columns: 1fr 360px 320px;
+    gap: 12px;
+    align-items: start;
+}
+.fmt-conversation {
+    display: flex;
+    flex-direction: column;
+    min-height: 600px;
+}
+.fmt-conversation .fm-chatlog {
+    flex: 1;
+    max-height: 440px;
+}
+.fmt-sidebar-col {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+@media (max-width: 1300px) {
+    .fmt-layout { grid-template-columns: 1fr 360px; }
+    .fmt-sidebar-col { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+}
+@media (max-width: 900px) {
+    .fmt-layout { grid-template-columns: 1fr; }
+    .fmt-sidebar-col { grid-column: 1; display: flex; flex-direction: column; }
+}
+</style>
+{% endblock %}

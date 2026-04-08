@@ -1,0 +1,105 @@
+<!-- Shared Header Component -->
+<style>
+:root {
+    --navy: #1e3a5f;
+    --orange: #f97316;
+    --white: #ffffff;
+    --gray: #f3f4f6;
+    --border: #e5e7eb;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #e8eef5;
+    color: #1e293b;
+}
+
+.nav {
+    background: var(--navy);
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.nav-title {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.nav-title small {
+    color: var(--orange);
+    font-size: 12px;
+    text-transform: uppercase;
+    display: block;
+    margin-top: 2px;
+}
+
+.nav-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: var(--orange);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #ea580c;
+}
+
+.btn-secondary {
+    background: rgba(255,255,255,0.15);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+.btn-success {
+    background: #10b981;
+    color: white;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+h1 {
+    font-size: 32px;
+    color: var(--navy);
+    margin-bottom: 10px;
+}
+
+p.subtitle {
+    color: #64748b;
+    margin-bottom: 30px;
+}
+</style>
+
+<div class="nav">
+    <div class="nav-title">
+        FACILITIES MANAGEMENT
+        <small>Operations and Reporting Platform</small>
+    </div>
+    {% block nav_buttons %}
+    <a href="/artefacts/new" class="btn btn-primary">+ New Report</a>
+    {% endblock %}
+</div>

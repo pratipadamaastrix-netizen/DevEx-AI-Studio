@@ -1,0 +1,34 @@
+# Environment — never commit real keys
+.env
+
+# Databases
+*.db
+
+# Uploaded files
+photos/
+
+# Python bytecode / cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Release zips (build locally, don't commit)
+*.zip
+
+# OS
+.DS_Store
+Thumbs.db
+Thumbs.db:encryptable
+desktop.ini
