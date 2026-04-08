@@ -34,8 +34,11 @@ from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 from reportlab.lib import colors
-from reportlab.platypus import Table, TableStyle
 
+import google.generativeai as genai
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+import PyPDF2
 # import app_spec
 # import app_rooms
 
@@ -58,6 +61,14 @@ from app_spec import register_spec_routes, run_spec_migrations
 from app_rooms import register_room_routes, run_room_migrations
 
 app = Flask(__name__)
+
+from flask_session import Session
+app.config["SESSION_TYPE"] = "filesystem"
+app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_USE_SIGNER"] = True
+
+Session(app)
+
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 app.config['UPLOAD_FOLDER'] = 'photos'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
@@ -378,7 +389,7 @@ ENGINE_DB_PATH = 'engine.db'
 
 # ===== UTILITIES =====
 
-def create_ticket(name, flat, address, phone, issue, urgency):
+def create_ticket(name, flat, address, phone, email, issue, urgency):
 
     conn = get_engine_db()
 
@@ -387,18 +398,22 @@ def create_ticket(name, flat, address, phone, issue, urgency):
     conn.execute(
         """
         INSERT INTO fm_tickets
-        (ref, estate, unit, customer, phone, address, source, priority, category, status, summary)
-        VALUES (?, ?, ?, ?, ?, ?, 'webchat', ?, 'general', 'NEW', ?)
+        (ref, estate, unit, customer, phone, email, address, source, priority, category, status, summary)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             ref,
-            address,
-            flat,
-            name,
-            phone,
-            address,
-            urgency,
-            issue
+            address,        # estate
+            flat,           # unit
+            name,           # customer
+            phone,          # phone
+            email,          # email
+            address,        # address
+            "webchat",      # source
+            urgency,        # priority
+            "general",      # category
+            "NEW",          # status
+            issue           # summary
         )
     )
 
@@ -406,10 +421,153 @@ def create_ticket(name, flat, address, phone, issue, urgency):
     conn.close()
 
     return ref
-
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
+##########################################################
+def extract_text_from_document(file):
+
+    try:
+        filename = file.filename.lower()
+
+        # ===== PDF FILE =====
+        if filename.endswith(".pdf"):
+
+            from PyPDF2 import PdfReader
+
+            # Reset file pointer (important)
+            file.seek(0)
+
+            reader = PdfReader(file)
+            text = ""
+
+            for page in reader.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text
+
+            if not text.strip():
+                return "\n[Document]: No readable text found in PDF."
+
+            return "\n[Document]: " + text[:1000]
+
+        # ===== OTHER FILE TYPES =====
+        else:
+            return "\n[Document uploaded]"
+
+    except Exception as e:
+        print("Doc error:", e)
+        return "\n[Document]: Failed to read file."
+
+def analyze_image_from_url(image_url):
+
+    try:
+        from PIL import Image
+        from io import BytesIO
+
+        response = requests.get(image_url)
+
+        if response.status_code != 200:
+            print("Image download failed")
+            return ""
+
+        img = Image.open(BytesIO(response.content))
+
+        models = [
+            "gemini-2.5-flash-lite",
+            "gemini-2.5-flash",
+            "gemini-1.5-flash",
+            "gemini-1.5-flash-8b"
+        ]
+
+        prompt = """
+Identify the facility maintenance issue in this image.
+
+Examples:
+- pest infestation
+- water leakage
+- electrical fault
+- AC issue
+- lift malfunction
+
+Describe the issue clearly.
+"""
+
+        for model_name in models:
+
+            try:
+
+                print("Trying model:", model_name)
+
+                model = genai.GenerativeModel(model_name)
+
+                result = model.generate_content([prompt, img])
+
+                if result and result.text:
+                    return result.text
+
+            except Exception as e:
+                print("Model failed:", model_name, e)
+                continue
+
+        return "Unable to analyze image."
+
+    except Exception as e:
+        print("Gemini error:", e)
+        return ""
+    
+def analyze_uploaded_image(file):
+
+    try:
+        from PIL import Image
+
+        img = Image.open(file)
+
+        models = [
+            "gemini-2.5-flash-lite",
+            "gemini-2.5-flash",
+            "gemini-1.5-flash",
+            "gemini-1.5-flash-8b"
+        ]
+
+        prompt = """
+Identify the facility maintenance issue in this image.
+
+Examples:
+- pest infestation
+- water leakage
+- broken light
+- AC issue
+- electrical fault
+"""
+
+        for model_name in models:
+
+            try:
+
+                print("Trying model:", model_name)
+
+                model = genai.GenerativeModel(model_name)
+
+                result = model.generate_content([prompt, img])
+
+                if result and result.text:
+                    return "\n[Image Analysis]: " + result.text
+
+            except Exception as e:
+
+                print("Model failed:", model_name, e)
+
+                continue
+
+        return ""
+
+    except Exception as e:
+
+        print("Gemini error:", e)
+
+        return ""
+    ##############################################
 def get_fire_door_db():
     """Get database connection for Fire Door legacy system"""
     conn = sqlite3.connect(FIRE_DOOR_DB_PATH)
@@ -574,6 +732,7 @@ def run_fm_migrations(conn):
     print("  Running FM migrations...")
     ensure_column(conn, 'fm_tickets', "phone TEXT")
     ensure_column(conn, 'fm_tickets', "address TEXT")
+    ensure_column(conn, 'fm_tickets', "email TEXT")
     if not table_exists(conn, 'fm_tickets'):
         print("  Creating FM tables from schema_fm.sql...")
         with open('schema_fm.sql', 'r') as f:
@@ -1780,163 +1939,280 @@ def export_pdf(report_id, export_type):
 # AI CHATBOT ROUTES (DeepSeek + Gemini)
 # =====================================================
 
+@app.route("/ai/reset", methods=["POST"])
+def ai_reset():
+
+    # clear chat history
+    session["history"] = []
+
+    # reset ticket data
+    session["ticket_data"] = {
+        "name": None,
+        "email": None,
+        "flat_number": None,
+        "full_address": None,
+        "contact_number": None,
+        "issue": None,
+        "urgency": None
+    }
+
+    session.modified = True
+
+    return jsonify({"status": "reset"})
+
+
 @app.route('/ai/chat', methods=['POST'])
 def ai_chat():
-    if "chat_history" not in session:
-        session["chat_history"] = []
-    user_message = request.form.get("message", "")
-    images = request.files.getlist("images")
-    
-    reply_text = ""
+
+    if "history" not in session:
+        session["history"] = []
+
+    user_message = ""
+
+    if request.is_json:
+        data = request.get_json()
+        user_message = data.get("message", "")
+    else:
+        user_message = request.form.get("message", "")
+        
+    # FIX: STORE USER DATA
+    # =============================
+
+    import re
+
+    if "ticket_data" not in session:
+        session["ticket_data"] = {
+            "name": None,
+            "email": None,
+            "flat_number": None,
+            "full_address": None,
+            "contact_number": None,
+            "issue": None,
+            "urgency": None
+        }
+
+    msg = user_message.lower()
+
+    # =============================
+    # AUTO FIELD DETECTION
+    # =============================
+
+    data = session["ticket_data"]
+
+    # Detect email
+    email = re.search(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", user_message)
+    if email:
+        data["email"] = email.group()
+
+    # Detect phone number
+    phone = re.search(r"\b\d{10}\b", user_message)
+    if phone:
+        data["contact_number"] = phone.group()
+
+    # Detect flat number
+    flat = re.search(r"(flat|apartment|unit)\s*(\d+)", msg)
+    if flat:
+        data["flat_number"] = flat.group(2)
+
+    # Detect urgency
+    if "urgent" in msg:
+        data["urgency"] = "urgent"
+    elif "normal" in msg:
+        data["urgency"] = "normal"
+    elif "low" in msg:
+        data["urgency"] = "low"
+
+    # Detect name (basic safe rule)
+    if data["name"] is None:
+        if len(user_message.split()) <= 3 and "@" not in user_message and not phone:
+            if not any(x in msg for x in ["flat","address","issue","problem","urgent","normal"]):
+                data["name"] = user_message
+
+    # Detect address
+    if data["full_address"] is None:
+        if "," in user_message and len(user_message) > 10:
+            data["full_address"] = user_message
+
+    # Detect issue description
+    if data["issue"] is None:
+        keywords = ["issue","problem","leak","pest","cockroach","ant","electric","water","damage","broken"]
+        if any(word in msg for word in keywords):
+            data["issue"] = user_message
+
+    # Save session AFTER detection
+    session["ticket_data"] = data
+    session.modified = True
 
     # =============================
     # GEMINI IMAGE ANALYSIS
     # =============================
-
+    images = request.files.getlist("images")
+    
     if images:
-
-        api_key = os.getenv("GEMINI_API_KEY")
-
         for img in images:
-
-            image_bytes = img.read()
-
-            url = f"https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent?key={api_key}"
-
-            payload = {
-                "contents": [
-                    {
-                        "parts": [
-                            {"text": "Analyze this image and explain what facility issue is visible."},
-                            {
-                                "inline_data": {
-                                    "mime_type": "image/jpeg",
-                                    "data": base64.b64encode(image_bytes).decode()
-                                }
-                            }
-                        ]
-                    }
-                ]
-            }
-
-            r = requests.post(url, json=payload)
-            result = r.json()
-
-            try:
-                analysis = result["candidates"][0]["content"]["parts"][0]["text"]
-                user_message += "\nImage analysis: " + analysis
-            except:
-                reply_text += "\nCould not analyze image.\n"
-
+            analysis = analyze_uploaded_image(img)
+            if analysis:
+                user_message += analysis
 
     # =============================
-    # DEEPSEEK CHAT
+    # SAVE USER MESSAGE
     # =============================
 
-    if user_message:
-
-        api_key = os.getenv("DEEPSEEK_API_KEY")
-
-        system_prompt = """
-        You are a facility management assistant that creates maintenance tickets.
-
-        You must collect these fields:
-
-        name
-        flat_number
-        full_address
-        contact_number
-        issue
-        urgency
-
-        Rules:
-
-        1. Extract details from user messages automatically.
-        2. If a field is already given, DO NOT ask again.
-        3. Only ask for missing fields.
-        4. Never repeat the same question.
-        5. Understand variations like:
-        flat 23, flat-23, unit 23, room 23 → flat_number
-
-        When all fields are collected return EXACTLY:
-
-        CREATE_TICKET:
-        name=...
-        flat_number=...
-        full_address=...
-        contact_number=...
-        issue=...
-        urgency=low/normal/urgent
-        """
-        
-        session["chat_history"].append({
+    session["history"].append({
         "role": "user",
         "content": user_message
-        })
-        messages = [{"role": "system", "content": system_prompt}]
-        messages.extend(session["chat_history"])
+    })
 
-        response = requests.post(
-            "https://api.deepseek.com/chat/completions",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "deepseek-chat",
-                "messages": messages,
-                "temperature": 0.2
+    # =============================
+    # SYSTEM PROMPT
+    # =============================
+
+    system_prompt = """
+You are a helpful facility maintenance assistant.
+
+Your goal is to help the user create a maintenance ticket naturally.
+
+Collect these fields:
+
+name
+email
+flat_number
+full_address
+contact_number
+issue
+urgency
+
+Rules:
+
+• Ask one question at a time
+• Do not repeat questions
+• If information is already known do NOT ask again
+• Speak naturally like a helpful assistant
+
+When all fields are collected return exactly:
+
+CREATE_TICKET:
+name=...
+email=...
+flat_number=...
+full_address=...
+contact_number=...
+issue=...
+urgency=low/normal/urgent
+"""
+
+    ticket_data = session["ticket_data"]
+
+    context = f"""
+    Collected ticket information:
+
+    name: {ticket_data.get('name')}
+    email: {ticket_data.get('email')}
+    flat_number: {ticket_data.get('flat_number')}
+    full_address: {ticket_data.get('full_address')}
+    contact_number: {ticket_data.get('contact_number')}
+    issue: {ticket_data.get('issue')}
+    urgency: {ticket_data.get('urgency')}
+
+    Ask only for missing information.
+    """
+
+    messages = [
+        {"role": "system", "content": system_prompt + context}
+    ] + session["history"]
+
+    api_key = os.getenv("DEEPSEEK_API_KEY")
+
+    response = requests.post(
+        "https://api.deepseek.com/chat/completions",
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        },
+        json={
+            "model": "deepseek-chat",
+            "messages": messages,
+            "temperature": 0.2
+        }
+    )
+
+    result = response.json()
+    reply = result["choices"][0]["message"]["content"]
+
+    # =============================
+    # SAVE AI RESPONSE
+    # =============================
+
+    session["history"].append({
+        "role": "assistant",
+        "content": reply
+    })
+    session["history"] = session["history"][-8:]
+
+    session.modified = True
+
+    # =============================
+    # CREATE TICKET
+    # =============================
+
+    if "CREATE_TICKET:" in reply:
+
+        try:
+
+            lines = reply.split("\n")
+            data = {}
+
+            for line in lines:
+                if "=" in line:
+                    k, v = line.split("=", 1)
+                    data[k.strip().lower()] = v.strip()
+
+            # Extract fields
+            name = data.get("name")
+            flat = data.get("flat_number")
+            address = data.get("full_address")
+            phone = data.get("contact_number")
+            email = data.get("email")
+            issue = data.get("issue")
+            urgency = data.get("urgency")
+
+            # ===== REQUIRED FIELD CHECK =====
+            required_fields = {
+                "name": name,
+                "email": email,
+                "flat number": flat,
+                "full address": address,
+                "contact number": phone,
+                "issue": issue,
+                "urgency": urgency
             }
-        )
 
-        result = response.json()
-        reply = result["choices"][0]["message"]["content"]
-        session["chat_history"].append({
-            "role": "assistant",
-            "content": reply
-})
-        # ================================
-        # CHECK IF AI CREATED TICKET
-        # ================================
+            for field, value in required_fields.items():
+                if not value:
+                    return jsonify({
+                        "reply": f"I still need your {field} before creating the ticket."
+                    })
 
-        if "CREATE_TICKET:" in reply:
+            # ===== CREATE TICKET =====
+            ref = create_ticket(name, flat, address, phone, email, issue, urgency)
 
-            try:
+            # Reset chat session
+            session["history"] = []
 
-                lines = reply.split("\n")
+            return jsonify({
+                "reply": f"✅ Ticket created successfully.\nReference: {ref}"
+            })
 
-                data = {}
+        except Exception as e:
+            print("Ticket creation error:", e)
 
-                for line in lines:
-
-                    if "=" in line:
-                        k, v = line.split("=", 1)
-                        data[k.strip().lower()] = v.strip()
-
-                name = data.get("name")
-                flat_number = data.get("flat_number")
-                address = data.get("full_address")
-                phone = data.get("contact_number")
-                issue = data.get("issue")
-                urgency = data.get("urgency")
-
-                ref = create_ticket(name, flat_number, address, phone, issue, urgency)
-
-                return jsonify({
-                    "reply": f"✅ Ticket created successfully.\nReference: {ref}"
-                })
-
-            except Exception as e:
-
-                print("Ticket creation error:", e)
-
-                return jsonify({
-                    "reply": "❌ Ticket creation failed."
-                })
-        reply_text += "\n" + reply
-
-        return jsonify({"reply": reply_text})
+            return jsonify({
+                "reply": "❌ Ticket creation failed."
+            })
+    return jsonify({"reply": reply})
         #######################
+        
+
 @app.route('/ai/image', methods=['POST'])
 def ai_image():
 
@@ -1945,7 +2221,7 @@ def ai_image():
 
     api_key = os.getenv("GEMINI_API_KEY")
 
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
 
     payload = {
         "contents": [

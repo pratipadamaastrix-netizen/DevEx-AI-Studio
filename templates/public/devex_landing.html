@@ -824,8 +824,26 @@ uploadBtn.onclick = () => fileInput.click();
 
 /* Open chat */
 
-chatToggle.onclick = () => {
-chatBox.style.display="flex";
+chatToggle.onclick = async () => {
+
+    /* Reset AI session */
+
+    await fetch("/ai/reset",{
+        method:"POST"
+    });
+
+    /* Clear chat messages */
+
+    chatMessages.innerHTML = `
+    <div class="bot-msg">
+    👋 Welcome to DevEx! Ask me anything.
+    </div>
+    `;
+
+    /* Open chat */
+
+    chatBox.style.display="flex";
+
 }
 
 /* Close chat */

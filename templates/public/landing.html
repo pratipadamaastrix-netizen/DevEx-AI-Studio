@@ -448,34 +448,58 @@ let text = document.getElementById("chat-input").value;
 let image = document.getElementById("image-upload").files[0];
 let chat = document.getElementById("chat-messages");
 
-if(text){
+/* stop if empty */
 
+if(!text && !image) return;
+
+/* show user text */
+
+if(text){
 chat.innerHTML += `<div class="user-msg">${text}</div>`;
+}
+
+/* show image preview */
+
+if(image){
+let imgURL = URL.createObjectURL(image);
+
+chat.innerHTML += `
+<div class="user-msg">
+<img src="${imgURL}" style="width:120px;border-radius:8px;">
+</div>
+`;
+}
+
+/* create form data */
+
+let formData = new FormData();
+formData.append("message", text);
+
+if(image){
+formData.append("images", image);
+}
+
+/* send request */
 
 let res = await fetch("/ai/chat",{
 method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({message:text})
+body:formData
 });
 
 let data = await res.json();
+
+/* show AI reply */
 
 chat.innerHTML += `<div class="bot-msg">${data.reply}</div>`;
-}
 
-if(image){
+/* auto scroll */
 
-let form = new FormData();
-form.append("image", image);
+chat.scrollTop = chat.scrollHeight;
 
-let res = await fetch("/ai/image",{
-method:"POST",
-body:form
-});
+/* clear input */
 
-let data = await res.json();
-
-chat.innerHTML += `<div class="bot-msg">${data.analysis}</div>`;
+document.getElementById("chat-input").value="";
+document.getElementById("image-upload").value="";
 }
 
 }
