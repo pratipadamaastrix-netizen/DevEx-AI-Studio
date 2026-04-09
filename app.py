@@ -385,7 +385,10 @@ def wa_monitor_redirect():
 # Fire Door system uses its own database
 FIRE_DOOR_DB_PATH = 'fire_door_reports.db'
 # Engine system uses separate database (CF1.1: Physical split complete)
-ENGINE_DB_PATH = 'engine.db'
+
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ENGINE_DB_PATH = os.path.join(BASE_DIR, "engine.db")
 
 # ===== UTILITIES =====
 def create_ticket(name, flat, address, phone, email, issue, urgency):
