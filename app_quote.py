@@ -27,7 +27,6 @@ import os
 import requests
 from datetime import datetime
 from io import BytesIO
-
 import sqlite3
 from flask import (
     Flask, render_template, request, jsonify,
@@ -50,7 +49,17 @@ GEMINI_API_KEY   = os.environ.get('GEMINI_API_KEY', '')
 # =========================================================================
 # DATABASE
 # =========================================================================
+import os
+import sqlite3
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+QUOTE_DB = os.path.join(BASE_DIR, "data", "quote.db")
+
+def get_quote_db():
+    conn = sqlite3.connect(QUOTE_DB)
+    conn.row_factory = sqlite3.Row
+    return conn
+#####################################################################
 def get_quote_db():
     """Quote portal uses engine.db — same as artefacts and FM."""
     conn = sqlite3.connect(ENGINE_DB_PATH)
@@ -896,7 +905,7 @@ def _pdf_wrap_text(c, text, x, y, max_width, colour, font_size):
 # ROUTE REGISTRATION
 # =========================================================================
 
-def register_quote_routes(app: Flask):
+def register_quote_routes(app: Flask,get_quote_db):
     """
     Call this from app.py after Flask app is created:
         from app_quote import register_quote_routes

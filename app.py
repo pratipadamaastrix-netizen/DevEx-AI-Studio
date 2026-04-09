@@ -34,7 +34,7 @@ from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 from reportlab.lib import colors
-
+from app_quote import register_quote_routes, run_quote_migrations
 import google.generativeai as genai
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
@@ -96,8 +96,7 @@ else:
             return f
     limiter = _NoopLimiter()
 
-# ── Quote Portal routes (QP1.0) ───────────────────────────────────────────
-register_quote_routes(app)
+# ── Quote Portal routes (QP1.0) ────────────────────────────────────────
 
 # ── Spec Scope Builder routes ─────────────────────────────────────────────
 register_spec_routes(app)
@@ -119,12 +118,25 @@ os.makedirs(DATA_DIR, exist_ok=True)
 QUOTE_DB = os.path.join(DATA_DIR, "quote.db")
 ENGINE_DB_PATH = os.path.join(DATA_DIR, "engine.db")
 
-
 # ---------------- DB CONNECTION ----------------
 
 def get_engine_db():
     """Get database connection for Engine/Artefact system"""
     conn = sqlite3.connect(ENGINE_DB_PATH, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    return conn
+def get_quote_db():
+    """Database connection for Quote Portal"""
+    conn = sqlite3.connect(QUOTE_DB)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+register_quote_routes(app, get_quote_db)
+
+WA_DB_PATH = os.path.join(DATA_DIR, "wa.db")
+def wa_get_db():
+    """Get database connection for WhatsApp sessions"""
+    conn = sqlite3.connect(WA_DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 # --------- RUN DATABASE MIGRATIONS ON STARTUP ---------
@@ -143,13 +155,21 @@ def init_databases():
 
     conn.execute("""
     CREATE TABLE IF NOT EXISTS fm_tickets (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        ref TEXT,
-        estate TEXT,
-        unit TEXT,
-        issue TEXT,
-        urgency TEXT,
-        created_at TEXT
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ref TEXT,
+    estate TEXT,
+    unit TEXT,
+    customer TEXT,
+    phone TEXT,
+    email TEXT,
+    address TEXT,
+    source TEXT,
+    priority TEXT,
+    category TEXT,
+    status TEXT,
+    summary TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
 
@@ -471,25 +491,25 @@ def create_ticket(name, flat, address, phone, email, issue, urgency):
     ref = "FM-" + str(uuid.uuid4())[:8].upper()
 
     conn.execute(
-        """
-        INSERT INTO fm_tickets
-        (ref, estate, unit, customer, phone, email, address, source, priority, category, status, summary)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            ref,
-            address,
-            flat,
-            name,
-            phone,
-            email,
-            address,
-            "webchat",
-            urgency,
-            "general",
-            "NEW",
-            issue
-        )
+    """
+    INSERT INTO fm_tickets
+    (ref, estate, unit, customer, phone, email, address, source, priority, category, status, summary)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """,
+    (
+    ref,
+    address,
+    flat,
+    name,
+    phone,
+    email,
+    address,
+    "webchat",
+    urgency,
+    "general",
+    "NEW",
+    issue
+    )
     )
 
     conn.commit()
@@ -557,16 +577,7 @@ def analyze_image_from_url(image_url):
         ]
 
         prompt = """
-Identify the facility maintenance issue in this image.
-
-Examples:
-- pest infestation
-- water leakage
-- electrical fault
-- AC issue
-- lift malfunction
-
-Describe the issue clearly.
+Analyze this image or document and describe the software project requirement or feature shown.
 """
 
         for model_name in models:
@@ -607,14 +618,7 @@ def analyze_uploaded_image(file):
         ]
 
         prompt = """
-Identify the facility maintenance issue in this image.
-
-Examples:
-- pest infestation
-- water leakage
-- broken light
-- AC issue
-- electrical fault
+Analyze this image or document and describe the software project requirement or feature shown.
 """
 
         for model_name in models:
@@ -2022,15 +2026,20 @@ def ai_reset():
     session["history"] = []
 
     # reset ticket data
-    session["ticket_data"] = {
-        "name": None,
-        "email": None,
-        "flat_number": None,
-        "full_address": None,
-        "contact_number": None,
-        "issue": None,
-        "urgency": None
-    }
+    session["project_data"] = {
+    "name": None,
+    "email": None,
+    "company": None,
+    "phone": None,
+    "project_type": None,
+    "project_name": None,
+    "project_description": None,
+    "features": None,
+    "tech_stack": None,
+    "integrations": None,
+    "timeline": None,
+    "budget": None
+}
 
     session.modified = True
 
@@ -2056,15 +2065,20 @@ def ai_chat():
 
     import re
 
-    if "ticket_data" not in session:
-        session["ticket_data"] = {
+    if "project_data" not in session:
+        session["project_data"] = {
             "name": None,
             "email": None,
-            "flat_number": None,
-            "full_address": None,
-            "contact_number": None,
-            "issue": None,
-            "urgency": None
+            "company": None,
+            "phone": None,
+            "project_type": None,
+            "project_name": None,
+            "project_description": None,
+            "features": None,
+            "tech_stack": None,
+            "integrations": None,
+            "timeline": None,
+            "budget": None
         }
 
     msg = user_message.lower()
@@ -2073,50 +2087,87 @@ def ai_chat():
     # AUTO FIELD DETECTION
     # =============================
 
-    data = session["ticket_data"]
+    data = session["project_data"]
+    
+    # =============================
+    # SAVE USER ANSWERS INTO MEMORY
+    # =============================
 
+    # Detect name
+    if data["name"] is None:
+        if len(user_message.split()) <= 3 and "@" not in user_message:
+            if not re.search(r"\d", user_message):
+                data["name"] = user_message
+
+    # Detect company
+    if data["company"] is None and len(user_message.split()) <= 2:
+        if user_message.isupper() or user_message.istitle():
+            data["company"] = user_message
+
+    # Detect project name
+    if data["project_name"] is None and len(user_message.split()) <= 4:
+        if "app" in msg or "ai" in msg:
+            data["project_name"] = user_message
+
+    # Detect project description
+    if data["project_description"] is None:
+        if len(user_message) > 40:
+            data["project_description"] = user_message
+
+    # Detect features
+    if data["features"] is None:
+        if "feature" in msg or "include" in msg:
+            data["features"] = user_message
+
+    # Detect tech stack
+    if data["tech_stack"] is None:
+        if "react" in msg or "flutter" in msg or "python" in msg:
+            data["tech_stack"] = user_message
+
+    # Detect integrations
+    if data["integrations"] is None:
+        if "integration" in msg or "whatsapp" in msg or "slack" in msg:
+            data["integrations"] = user_message
+
+    # Detect timeline
+    if data["timeline"] is None:
+        if "month" in msg:
+            data["timeline"] = user_message
+
+    # Detect budget
+    if data["budget"] is None:
+        if re.search(r"\d{4,}", user_message):
+            data["budget"] = user_message
+###############################
     # Detect email
     email = re.search(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", user_message)
     if email:
         data["email"] = email.group()
 
-    # Detect phone number
+    # detect company
+    if "company" in msg:
+        data["company"] = user_message
+
+    # detect phone
     phone = re.search(r"\b\d{10}\b", user_message)
     if phone:
-        data["contact_number"] = phone.group()
+        data["phone"] = phone.group()
 
-    # Detect flat number
-    flat = re.search(r"(flat|apartment|unit)\s*(\d+)", msg)
-    if flat:
-        data["flat_number"] = flat.group(2)
+    # detect project type
+    if "website" in msg:
+        data["project_type"] = "website"
 
-    # Detect urgency
-    if "urgent" in msg:
-        data["urgency"] = "urgent"
-    elif "normal" in msg:
-        data["urgency"] = "normal"
-    elif "low" in msg:
-        data["urgency"] = "low"
+    if "web app" in msg:
+        data["project_type"] = "web_app"
 
-    # Detect name (basic safe rule)
-    if data["name"] is None:
-        if len(user_message.split()) <= 3 and "@" not in user_message and not phone:
-            if not any(x in msg for x in ["flat","address","issue","problem","urgent","normal"]):
-                data["name"] = user_message
+    if "mobile app" in msg:
+        data["project_type"] = "mobile_app"
 
-    # Detect address
-    if data["full_address"] is None:
-        if "," in user_message and len(user_message) > 10:
-            data["full_address"] = user_message
-
-    # Detect issue description
-    if data["issue"] is None:
-        keywords = ["issue","problem","leak","pest","cockroach","ant","electric","water","damage","broken"]
-        if any(word in msg for word in keywords):
-            data["issue"] = user_message
+    if "ecommerce" in msg:
+        data["project_type"] = "ecommerce"
 
     # Save session AFTER detection
-    session["ticket_data"] = data
+    session["project_data"] = data
     session.modified = True
 
     # =============================
@@ -2144,51 +2195,70 @@ def ai_chat():
     # =============================
 
     system_prompt = """
-You are a helpful facility maintenance assistant.
+You are a Devex Studios AI project assistant.
 
-Your goal is to help the user create a maintenance ticket naturally.
+Your job is to collect project requirements from the client.
 
 Collect these fields:
 
 name
 email
-flat_number
-full_address
-contact_number
-issue
-urgency
+company
+phone
+project_type
+project_name
+project_description
+features
+tech_stack
+integrations
+timeline
+budget
 
 Rules:
 
-• Ask one question at a time
-• Do not repeat questions
-• If information is already known do NOT ask again
-• Speak naturally like a helpful assistant
+Ask one question at a time.
 
-When all fields are collected return exactly:
+Do not repeat questions.
 
-CREATE_TICKET:
+Never ask a question if the answer already exists in the collected data.
+
+If information already exists do not ask again.
+
+When all data is collected return exactly:
+
+CREATE_PROJECT:
+
 name=...
 email=...
-flat_number=...
-full_address=...
-contact_number=...
-issue=...
-urgency=low/normal/urgent
+company=...
+phone=...
+project_type=...
+project_name=...
+project_description=...
+features=...
+tech_stack=...
+integrations=...
+timeline=...
+budget=...
 """
 
-    ticket_data = session["ticket_data"]
+    project_data = session["project_data"]
 
     context = f"""
-    Collected ticket information:
+    Collected project information:
 
-    name: {ticket_data.get('name')}
-    email: {ticket_data.get('email')}
-    flat_number: {ticket_data.get('flat_number')}
-    full_address: {ticket_data.get('full_address')}
-    contact_number: {ticket_data.get('contact_number')}
-    issue: {ticket_data.get('issue')}
-    urgency: {ticket_data.get('urgency')}
+    name: {project_data.get('name')}
+    email: {project_data.get('email')}
+    company: {project_data.get('company')}
+    phone: {project_data.get('phone')}
+    project_type: {project_data.get('project_type')}
+    project_name: {project_data.get('project_name')}
+    project_description: {project_data.get('project_description')}
+    features: {project_data.get('features')}
+    tech_stack: {project_data.get('tech_stack')}
+    integrations: {project_data.get('integrations')}
+    timeline: {project_data.get('timeline')}
+    budget: {project_data.get('budget')}
 
     Ask only for missing information.
     """
@@ -2208,7 +2278,7 @@ urgency=low/normal/urgent
         json={
             "model": "deepseek-chat",
             "messages": messages,
-            "temperature": 0.2
+            "temperature": 0.6
         }
     )
 
@@ -2227,11 +2297,11 @@ urgency=low/normal/urgent
 
     session.modified = True
 
-    # =============================
-    # CREATE TICKET
+    # # =============================
+    # CREATE PROJECT TICKET
     # =============================
 
-    if "CREATE_TICKET:" in reply:
+    if "CREATE_PROJECT:" in reply:
 
         try:
 
@@ -2243,48 +2313,74 @@ urgency=low/normal/urgent
                     k, v = line.split("=", 1)
                     data[k.strip().lower()] = v.strip()
 
-            # Extract fields
+            # Extract project fields
             name = data.get("name")
-            flat = data.get("flat_number")
-            address = data.get("full_address")
-            phone = data.get("contact_number")
             email = data.get("email")
-            issue = data.get("issue")
-            urgency = data.get("urgency")
+            company = data.get("company")
+            phone = data.get("phone")
+            project_type = data.get("project_type")
+            project_name = data.get("project_name")
+            project_description = data.get("project_description")
+            features = data.get("features")
+            tech_stack = data.get("tech_stack")
+            integrations = data.get("integrations")
+            timeline = data.get("timeline")
+            budget = data.get("budget")
 
             # ===== REQUIRED FIELD CHECK =====
             required_fields = {
                 "name": name,
                 "email": email,
-                "flat number": flat,
-                "full address": address,
-                "contact number": phone,
-                "issue": issue,
-                "urgency": urgency
+                "phone": phone,
+                "project type": project_type,
+                "project name": project_name,
+                "project description": project_description
             }
 
             for field, value in required_fields.items():
                 if not value:
                     return jsonify({
-                        "reply": f"I still need your {field} before creating the ticket."
+                        "reply": f"I still need your {field} before creating the project request."
                     })
 
-            # ===== CREATE TICKET =====
-            ref = create_ticket(name, flat, address, phone, email, issue, urgency)
+            # ===== CREATE PROJECT TICKET =====
+            project_data = {
+                "name": name,
+                "email": email,
+                "company": company,
+                "phone": phone,
+                "project_type": project_type,
+                "project_name": project_name,
+                "project_description": project_description,
+                "features": features,
+                "tech_stack": tech_stack,
+                "integrations": integrations,
+                "timeline": timeline,
+                "budget": budget
+            }
+
+            ref = create_project_ticket(project_data)
 
             # Reset chat session
             session["history"] = []
+            session["project_data"] = {}
 
             return jsonify({
-                "reply": f"✅ Ticket created successfully.\nReference: {ref}"
+                "reply": f"""✅ Project request created successfully.
+
+    Reference ID: {ref}
+
+    Our team will review your project and contact you soon."""
             })
 
         except Exception as e:
-            print("Ticket creation error:", e)
+
+            print("Project creation error:", e)
 
             return jsonify({
-                "reply": "❌ Ticket creation failed."
+                "reply": "❌ Project request creation failed. Please try again."
             })
+
     return jsonify({"reply": reply})
         #######################
         
@@ -4471,57 +4567,61 @@ def fm_api_tickets():
 
 
 @app.route('/fm/api/tickets', methods=['POST'])
-def fm_api_create_ticket():
-    """Create a new FM ticket."""
-    data = request.get_json()
+def create_project_ticket(data):
+    """
+    Create a new Project / Quote request from AI assistant
+    """
 
-    ref      = fm_generate_ref()
-    summary  = data.get('summary', '').strip()
-    estate   = data.get('estate', '').strip()
-    unit     = data.get('unit', '').strip()
-    customer = data.get('customer', '').strip()
-    source   = data.get('source', 'manual')
-    priority = data.get('priority') or fm_infer_priority(summary)
-    category = data.get('category') or fm_infer_category(summary)
-    assignee = data.get('assignee', '')
-    materials = data.get('materials', '')
-    location_note = data.get('location_note', '')
+    conn = get_engine_db()
 
-    if not summary:
-        return jsonify({'error': 'summary is required'}), 400
+    ref = "PRJ-" + str(uuid.uuid4())[:8].upper()
 
-    conn = fm_get_db()
     conn.execute(
-        """INSERT INTO fm_tickets
-           (ref, estate, unit, customer, source, priority, category,
-            status, assignee, summary, materials, location_note)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
-        (ref, estate, unit, customer, source, priority, category,
-         'NEW', assignee, summary, materials, location_note)
+    """
+    INSERT INTO quote_requests
+    (
+        ref,
+        contact_name,
+        email,
+        company,
+        phone,
+        project_name,
+        project_type,
+        project_description,
+        features,
+        tech_stack,
+        integrations,
+        timeline,
+        budget,
+        status,
+        source,
+        created_at
     )
-
-    # Log creation event
-    event_id = fm_dedup_key(f"{ref}-created-{datetime.utcnow().isoformat()}")
-    conn.execute(
-        """INSERT INTO fm_inbound_events
-           (event_id, source, event_type, ticket_ref, payload_json, status, processed_at)
-           VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP)""",
-        (event_id, source, 'ticket.created', ref, json.dumps(data), 'processed')
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+    """,
+    (
+        ref,
+        data.get("name"),
+        data.get("email"),
+        data.get("company"),
+        data.get("phone"),
+        data.get("project_name"),
+        data.get("project_type"),
+        data.get("project_description"),
+        data.get("features"),
+        data.get("tech_stack"),
+        data.get("integrations"),
+        data.get("timeline"),
+        data.get("budget"),
+        "NEW",
+        "ai_assistant"
     )
-
-    # Add initial message if provided
-    first_message = data.get('first_message', '').strip()
-    if first_message:
-        conn.execute(
-            "INSERT INTO fm_conversations (ticket_ref, sender, body, source) VALUES (?,?,?,?)",
-            (ref, 'customer', first_message, source)
-        )
+    )
 
     conn.commit()
     conn.close()
-    return jsonify({'ref': ref, 'status': 'NEW', 'priority': priority, 'category': category}), 201
 
-
+    return ref
 @app.route('/fm/api/tickets/<ref>', methods=['GET'])
 def fm_api_get_ticket(ref):
     conn = fm_get_db()
