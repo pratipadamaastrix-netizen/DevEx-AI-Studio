@@ -106,23 +106,17 @@ register_spec_routes(app)
 register_room_routes(app)
 
 # --------- RUN DATABASE MIGRATIONS ON STARTUP ---------
-
-with app.app_context():
-
-    conn_quote = sqlite3.connect("data/quote.db")
-
-    run_quote_migrations(conn_quote)
-
-    conn_quote.close()
 ############
 # ---------------- DATABASE PATH ----------------
 
-BASE_DIR = os.getcwd()
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 DATA_DIR = os.path.join(BASE_DIR, "data")
 
-if not os.path.exists(DATA_DIR):
-    os.makedirs(DATA_DIR)
+os.makedirs(DATA_DIR, exist_ok=True)
 
+QUOTE_DB = os.path.join(DATA_DIR, "quote.db")
 ENGINE_DB_PATH = os.path.join(DATA_DIR, "engine.db")
 
 
@@ -133,7 +127,14 @@ def get_engine_db():
     conn = sqlite3.connect(ENGINE_DB_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
+# --------- RUN DATABASE MIGRATIONS ON STARTUP ---------
+with app.app_context():
 
+    conn_quote = sqlite3.connect(QUOTE_DB)
+
+    run_quote_migrations(conn_quote)
+
+    conn_quote.close()
 # ---------------- DATABASE INIT ----------------
 
 def init_databases():
