@@ -388,10 +388,29 @@ FIRE_DOOR_DB_PATH = 'fire_door_reports.db'
 ENGINE_DB_PATH = 'engine.db'
 
 # ===== UTILITIES =====
-
 def create_ticket(name, flat, address, phone, email, issue, urgency):
 
     conn = get_engine_db()
+
+    # Ensure table exists (important for server)
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS fm_tickets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ref TEXT,
+        estate TEXT,
+        unit TEXT,
+        customer TEXT,
+        phone TEXT,
+        email TEXT,
+        address TEXT,
+        source TEXT,
+        priority TEXT,
+        category TEXT,
+        status TEXT,
+        summary TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
 
     ref = "FM-" + str(uuid.uuid4())[:8].upper()
 
@@ -403,17 +422,17 @@ def create_ticket(name, flat, address, phone, email, issue, urgency):
         """,
         (
             ref,
-            address,        # estate
-            flat,           # unit
-            name,           # customer
-            phone,          # phone
-            email,          # email
-            address,        # address
-            "webchat",      # source
-            urgency,        # priority
-            "general",      # category
-            "NEW",          # status
-            issue           # summary
+            address,
+            flat,
+            name,
+            phone,
+            email,
+            address,
+            "webchat",
+            urgency,
+            "general",
+            "NEW",
+            issue
         )
     )
 
@@ -421,6 +440,7 @@ def create_ticket(name, flat, address, phone, email, issue, urgency):
     conn.close()
 
     return ref
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
