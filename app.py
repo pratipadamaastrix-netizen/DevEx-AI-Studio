@@ -63,6 +63,7 @@ from app_rooms import register_room_routes, run_room_migrations
 app = Flask(__name__)
 
 from flask_session import Session
+
 app.config["SESSION_TYPE"] = "filesystem"
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_USE_SIGNER"] = True
@@ -104,9 +105,63 @@ register_spec_routes(app)
 # ── Meeting Rooms routes ──────────────────────────────────────────────────
 register_room_routes(app)
 
+# --------- RUN DATABASE MIGRATIONS ON STARTUP ---------
+
+with app.app_context():
+
+    conn_quote = sqlite3.connect("data/quote.db")
+
+    run_quote_migrations(conn_quote)
+
+    conn_quote.close()
+############
+# ---------------- DATABASE PATH ----------------
+
+BASE_DIR = os.getcwd()
+DATA_DIR = os.path.join(BASE_DIR, "data")
+
+if not os.path.exists(DATA_DIR):
+    os.makedirs(DATA_DIR)
+
+ENGINE_DB_PATH = os.path.join(DATA_DIR, "engine.db")
+
+
+# ---------------- DB CONNECTION ----------------
+
+def get_engine_db():
+    """Get database connection for Engine/Artefact system"""
+    conn = sqlite3.connect(ENGINE_DB_PATH, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+# ---------------- DATABASE INIT ----------------
+
+def init_databases():
+
+    conn = get_engine_db()
+
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS fm_tickets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ref TEXT,
+        estate TEXT,
+        unit TEXT,
+        issue TEXT,
+        urgency TEXT,
+        created_at TEXT
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
+
+# run database setup
+init_databases()
 # =========================================================================
 # DEVEX AUTH LAYER
 # =========================================================================
+
 
 DX_ADMIN_USER = os.environ.get('DX_ADMIN_USER', 'admin')
 DX_ADMIN_PASS = os.environ.get('DX_ADMIN_PASS', 'devex2024')  # Override via .env
@@ -387,9 +442,6 @@ FIRE_DOOR_DB_PATH = 'fire_door_reports.db'
 # Engine system uses separate database (CF1.1: Physical split complete)
 
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ENGINE_DB_PATH = os.path.join(BASE_DIR, "engine.db")
-
 # ===== UTILITIES =====
 def create_ticket(name, flat, address, phone, email, issue, urgency):
 
@@ -597,9 +649,9 @@ def get_fire_door_db():
     conn.row_factory = sqlite3.Row
     return conn
 
-def get_engine_db():
+# def get_engine_db():
     """Get database connection for Engine/Artefact system"""
-    conn = sqlite3.connect(ENGINE_DB_PATH)
+    conn = sqlite3.connect(ENGINE_DB_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 

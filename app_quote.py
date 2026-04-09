@@ -910,7 +910,7 @@ def register_quote_routes(app: Flask):
         """Public multi-step project requirements wizard."""
         return render_template('public/quote_wizard.html')
 
-    @app.route('/quote/submit', methods=['POST'])
+    @app.route('/api/quote/submit', methods=['POST'])
     def quote_submit():
         """
         Handle wizard form submission.
