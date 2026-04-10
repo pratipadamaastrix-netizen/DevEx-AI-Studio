@@ -52,7 +52,6 @@ except ImportError:
     print("  ! Flask-Limiter not installed — rate limiting disabled. Run: pip install Flask-Limiter")
 
 # ── Quote Portal (QP1.0) ──────────────────────────────────────────────────
-from app_quote import register_quote_routes, run_quote_migrations
 
 # ── Spec Scope Builder + Meeting Rooms ────────────────────────────────────
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Project'))
@@ -149,7 +148,7 @@ with app.app_context():
     conn_quote.close()
 # ---------------- DATABASE INIT ----------------
 
-def init_databases():
+def init_db():
 
     conn = get_engine_db()
 
@@ -178,7 +177,7 @@ def init_databases():
 
 
 # run database setup
-init_databases()
+init_db()
 # =========================================================================
 # DEVEX AUTH LAYER
 # =========================================================================
