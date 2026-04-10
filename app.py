@@ -6020,19 +6020,33 @@ def wa_monitor():
     return render_template('wa/monitor.html', active_nav='fm_dashboard')
 
 
+import os
+
 @app.route('/wa/api/config', methods=['GET'])
 @app.route('/studio/comms/api/config', methods=['GET'])
 def wa_api_config():
     """Return sanitised config status for the monitor dashboard."""
+
+    # Read environment variables at runtime
+    deepseek_key = os.environ.get("DEEPSEEK_API_KEY")
+    gemini_key = os.environ.get("GEMINI_API_KEY")
+    twilio_sid = os.environ.get("TWILIO_ACCOUNT_SID")
+    twilio_token = os.environ.get("TWILIO_AUTH_TOKEN")
+    twilio_from = os.environ.get("TWILIO_WA_FROM")
+
     return jsonify({
-        # All values masked — never expose full credentials to the browser
-        'deepseek_key':  ('set:' + DEEPSEEK_API_KEY[-4:])   if DEEPSEEK_API_KEY   else '',
-        'gemini_key':    ('set:' + GEMINI_API_KEY[-4:])     if GEMINI_API_KEY     else '',
-        'twilio_sid':    ('set:' + TWILIO_ACCOUNT_SID[-4:]) if TWILIO_ACCOUNT_SID else '',
-        'twilio_token':  'configured'                        if TWILIO_AUTH_TOKEN  else '',
-        'twilio_from':   ('set:' + TWILIO_WA_FROM[-4:])     if TWILIO_WA_FROM     else '',
-        'webhook_url':   request.host_url.rstrip('/') + '/wa/inbound',
-        'flush_count':   WA_FLUSH_ON_COUNT,
+        # Mask sensitive values
+        'deepseek_key': ('set:' + deepseek_key[-4:]) if deepseek_key else '',
+        'gemini_key': ('set:' + gemini_key[-4:]) if gemini_key else '',
+        'twilio_sid': ('set:' + twilio_sid[-4:]) if twilio_sid else '',
+        'twilio_token': 'configured' if twilio_token else '',
+        'twilio_from': ('set:' + twilio_from[-4:]) if twilio_from else '',
+
+        # Correct webhook URL for both local + production
+        'webhook_url': request.host_url.rstrip('/') + '/wa/inbound',
+
+        # Pipeline settings
+        'flush_count': WA_FLUSH_ON_COUNT,
         'flush_timeout': WA_FLUSH_TIMEOUT_S,
         'flush_keywords': list(WA_FLUSH_KEYWORDS),
     })
