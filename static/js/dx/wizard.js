@@ -315,7 +315,7 @@ async function submitForm() {
   };
 
   try {
-    const res = await fetch('/quote/submit', {
+    const res = await fetch('/api/quote/submit', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify(payload),

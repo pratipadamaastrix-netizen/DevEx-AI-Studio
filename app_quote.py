@@ -41,8 +41,8 @@ from reportlab.platypus import Table, TableStyle
 # =========================================================================
 # CONFIGURATION — inherits from app.py environment
 # =========================================================================
-
-ENGINE_DB_PATH  = 'engine.db'          # Same DB as artefacts / fm_tickets
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ENGINE_DB_PATH = os.path.join(BASE_DIR, "data", "engine.db")          # Same DB as artefacts / fm_tickets
 DEEPSEEK_API_KEY = os.environ.get('DEEPSEEK_API_KEY', '')
 GEMINI_API_KEY   = os.environ.get('GEMINI_API_KEY', '')
 

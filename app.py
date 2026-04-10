@@ -115,8 +115,8 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 
 os.makedirs(DATA_DIR, exist_ok=True)
 
-QUOTE_DB = os.path.join(DATA_DIR, "quote.db")
 ENGINE_DB_PATH = os.path.join(DATA_DIR, "engine.db")
+QUOTE_DB = ENGINE_DB_PATH
 
 # ---------------- DB CONNECTION ----------------
 
@@ -127,10 +127,10 @@ def get_engine_db():
     return conn
 def get_quote_db():
     """Database connection for Quote Portal"""
-    conn = sqlite3.connect(QUOTE_DB)
+    conn = sqlite3.connect(ENGINE_DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
-
+from app_quote import register_quote_routes
 register_quote_routes(app, get_quote_db)
 
 WA_DB_PATH = os.path.join(DATA_DIR, "wa.db")
@@ -2045,7 +2045,6 @@ def ai_reset():
 
     return jsonify({"status": "reset"})
 
-
 @app.route('/ai/chat', methods=['POST'])
 def ai_chat():
 
@@ -2059,9 +2058,21 @@ def ai_chat():
         user_message = data.get("message", "")
     else:
         user_message = request.form.get("message", "")
-        
-    # FIX: STORE USER DATA
+
     # =============================
+    # FIRST GREETING MESSAGE
+    # =============================
+
+    if len(session["history"]) == 0:
+
+        session["history"].append({
+            "role": "assistant",
+            "content": "Hi 👋 Welcome to Devex Studios! I'm your AI assistant.\n\nMay I know your name?"
+        })
+
+        return jsonify({
+            "reply": "Hi 👋 Welcome to Devex Studios! I'm your AI assistant.\n\nMay I know your name?"
+        })
 
     import re
 
@@ -2082,22 +2093,20 @@ def ai_chat():
         }
 
     msg = user_message.lower()
-
-    # =============================
-    # AUTO FIELD DETECTION
-    # =============================
-
     data = session["project_data"]
-    
+
     # =============================
-    # SAVE USER ANSWERS INTO MEMORY
+    # AUTO DETECT USER DATA
     # =============================
+
+    greetings = ["hello", "hi", "hey", "good morning", "good evening"]
 
     # Detect name
     if data["name"] is None:
-        if len(user_message.split()) <= 3 and "@" not in user_message:
-            if not re.search(r"\d", user_message):
-                data["name"] = user_message
+        if user_message.lower() not in greetings:
+            if len(user_message.split()) <= 3 and "@" not in user_message:
+                if not re.search(r"\d", user_message):
+                    data["name"] = user_message
 
     # Detect company
     if data["company"] is None and len(user_message.split()) <= 2:
@@ -2138,7 +2147,7 @@ def ai_chat():
     if data["budget"] is None:
         if re.search(r"\d{4,}", user_message):
             data["budget"] = user_message
-###############################
+
     # Detect email
     email = re.search(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", user_message)
     if email:
@@ -2166,24 +2175,20 @@ def ai_chat():
     if "ecommerce" in msg:
         data["project_type"] = "ecommerce"
 
-    # Save session AFTER detection
     session["project_data"] = data
     session.modified = True
 
     # =============================
-    # GEMINI IMAGE ANALYSIS
+    # IMAGE ANALYSIS
     # =============================
+
     images = request.files.getlist("images")
-    
+
     if images:
         for img in images:
             analysis = analyze_uploaded_image(img)
             if analysis:
                 user_message += analysis
-
-    # =============================
-    # SAVE USER MESSAGE
-    # =============================
 
     session["history"].append({
         "role": "user",
@@ -2215,14 +2220,9 @@ timeline
 budget
 
 Rules:
-
 Ask one question at a time.
-
 Do not repeat questions.
-
-Never ask a question if the answer already exists in the collected data.
-
-If information already exists do not ask again.
+Never ask if data already exists.
 
 When all data is collected return exactly:
 
@@ -2245,23 +2245,23 @@ budget=...
     project_data = session["project_data"]
 
     context = f"""
-    Collected project information:
+Collected project information:
 
-    name: {project_data.get('name')}
-    email: {project_data.get('email')}
-    company: {project_data.get('company')}
-    phone: {project_data.get('phone')}
-    project_type: {project_data.get('project_type')}
-    project_name: {project_data.get('project_name')}
-    project_description: {project_data.get('project_description')}
-    features: {project_data.get('features')}
-    tech_stack: {project_data.get('tech_stack')}
-    integrations: {project_data.get('integrations')}
-    timeline: {project_data.get('timeline')}
-    budget: {project_data.get('budget')}
+name: {project_data.get('name')}
+email: {project_data.get('email')}
+company: {project_data.get('company')}
+phone: {project_data.get('phone')}
+project_type: {project_data.get('project_type')}
+project_name: {project_data.get('project_name')}
+project_description: {project_data.get('project_description')}
+features: {project_data.get('features')}
+tech_stack: {project_data.get('tech_stack')}
+integrations: {project_data.get('integrations')}
+timeline: {project_data.get('timeline')}
+budget: {project_data.get('budget')}
 
-    Ask only for missing information.
-    """
+Ask only for missing information.
+"""
 
     messages = [
         {"role": "system", "content": system_prompt + context}
@@ -2285,20 +2285,16 @@ budget=...
     result = response.json()
     reply = result["choices"][0]["message"]["content"]
 
-    # =============================
-    # SAVE AI RESPONSE
-    # =============================
-
     session["history"].append({
         "role": "assistant",
         "content": reply
     })
-    session["history"] = session["history"][-8:]
 
+    session["history"] = session["history"][-8:]
     session.modified = True
 
-    # # =============================
-    # CREATE PROJECT TICKET
+    # =============================
+    # CREATE PROJECT REQUEST
     # =============================
 
     if "CREATE_PROJECT:" in reply:
@@ -2306,71 +2302,58 @@ budget=...
         try:
 
             lines = reply.split("\n")
-            data = {}
+            extracted = {}
 
             for line in lines:
                 if "=" in line:
                     k, v = line.split("=", 1)
-                    data[k.strip().lower()] = v.strip()
+                    extracted[k.strip().lower()] = v.strip()
 
-            # Extract project fields
-            name = data.get("name")
-            email = data.get("email")
-            company = data.get("company")
-            phone = data.get("phone")
-            project_type = data.get("project_type")
-            project_name = data.get("project_name")
-            project_description = data.get("project_description")
-            features = data.get("features")
-            tech_stack = data.get("tech_stack")
-            integrations = data.get("integrations")
-            timeline = data.get("timeline")
-            budget = data.get("budget")
+            name = extracted.get("name")
+            email = extracted.get("email")
+            company = extracted.get("company")
+            phone = extracted.get("phone")
+            project_type = extracted.get("project_type")
+            project_name = extracted.get("project_name")
+            project_description = extracted.get("project_description")
+            budget = extracted.get("budget")
 
-            # ===== REQUIRED FIELD CHECK =====
-            required_fields = {
-                "name": name,
-                "email": email,
-                "phone": phone,
-                "project type": project_type,
-                "project name": project_name,
-                "project description": project_description
-            }
+            conn = get_quote_db()
 
-            for field, value in required_fields.items():
-                if not value:
-                    return jsonify({
-                        "reply": f"I still need your {field} before creating the project request."
-                    })
+            ref = "REQ-" + str(uuid.uuid4())[:8].upper()
 
-            # ===== CREATE PROJECT TICKET =====
-            project_data = {
-                "name": name,
-                "email": email,
-                "company": company,
-                "phone": phone,
-                "project_type": project_type,
-                "project_name": project_name,
-                "project_description": project_description,
-                "features": features,
-                "tech_stack": tech_stack,
-                "integrations": integrations,
-                "timeline": timeline,
-                "budget": budget
-            }
+            conn.execute("""
+            INSERT INTO quote_requests
+            (ref,status,contact_name,contact_email,contact_phone,
+            company_name,project_name,project_type,brief_description,
+            budget_range,source)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)
+            """, (
+                ref,
+                "NEW",
+                name,
+                email,
+                phone,
+                company,
+                project_name,
+                project_type,
+                project_description,
+                budget,
+                "web"
+            ))
 
-            ref = create_project_ticket(project_data)
+            conn.commit()
+            conn.close()
 
-            # Reset chat session
             session["history"] = []
             session["project_data"] = {}
 
             return jsonify({
                 "reply": f"""✅ Project request created successfully.
 
-    Reference ID: {ref}
+Reference ID: {ref}
 
-    Our team will review your project and contact you soon."""
+Our team will review your project and contact you soon."""
             })
 
         except Exception as e:
@@ -2382,8 +2365,6 @@ budget=...
             })
 
     return jsonify({"reply": reply})
-        #######################
-        
 
 @app.route('/ai/image', methods=['POST'])
 def ai_image():
