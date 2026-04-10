@@ -152,9 +152,9 @@ def init_db():
 
     conn = get_engine_db()
 
-    # -------------------------------
+    # ------------------------------------------------
     # FM TICKETS
-    # -------------------------------
+    # ------------------------------------------------
     conn.execute("""
     CREATE TABLE IF NOT EXISTS fm_tickets (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -175,44 +175,64 @@ def init_db():
     )
     """)
 
-    # -------------------------------
+    # ------------------------------------------------
     # WHATSAPP SESSIONS
-    # -------------------------------
+    # ------------------------------------------------
     conn.execute("""
     CREATE TABLE IF NOT EXISTS wa_sessions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         wa_from TEXT,
+        wa_to TEXT,
         display_name TEXT,
         status TEXT,
+        message_count INTEGER DEFAULT 0,
         last_message_at TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
-    # ensure wa_to column exists
+
+    # Safe migration for older databases
     cols = [r[1] for r in conn.execute("PRAGMA table_info(wa_sessions)").fetchall()]
+
     if "wa_to" not in cols:
         conn.execute("ALTER TABLE wa_sessions ADD COLUMN wa_to TEXT")
 
-    # -------------------------------
-    # WHATSAPP MESSAGES  (THIS WAS MISSING)
-    # -------------------------------
+    if "display_name" not in cols:
+        conn.execute("ALTER TABLE wa_sessions ADD COLUMN display_name TEXT")
+
+    if "status" not in cols:
+        conn.execute("ALTER TABLE wa_sessions ADD COLUMN status TEXT")
+
+    if "message_count" not in cols:
+        conn.execute("ALTER TABLE wa_sessions ADD COLUMN message_count INTEGER DEFAULT 0")
+
+    if "last_message_at" not in cols:
+        conn.execute("ALTER TABLE wa_sessions ADD COLUMN last_message_at TIMESTAMP")
+
+    # ------------------------------------------------
+    # WHATSAPP MESSAGES
+    # ------------------------------------------------
     conn.execute("""
     CREATE TABLE IF NOT EXISTS wa_messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         session_id INTEGER,
+        twilio_sid TEXT,
         direction TEXT,
         body TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(session_id) REFERENCES wa_sessions(id)
     )
     """)
-    # ensure twilio_sid column exists
+
+    # Safe migration for old schema
     cols = [r[1] for r in conn.execute("PRAGMA table_info(wa_messages)").fetchall()]
+
     if "twilio_sid" not in cols:
         conn.execute("ALTER TABLE wa_messages ADD COLUMN twilio_sid TEXT")
-    # -------------------------------
+
+    # ------------------------------------------------
     # FM INBOUND EVENTS
-    # -------------------------------
+    # ------------------------------------------------
     conn.execute("""
     CREATE TABLE IF NOT EXISTS fm_inbound_events (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -226,7 +246,8 @@ def init_db():
     conn.commit()
     conn.close()
 
-# run database setup
+
+# Run database setup on server startup
 with app.app_context():
     init_db()
 # =========================================================================
