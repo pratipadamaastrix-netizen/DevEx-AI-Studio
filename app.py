@@ -152,23 +152,53 @@ def init_db():
 
     conn = get_engine_db()
 
+    # ===============================
+    # FM TICKETS TABLE
+    # ===============================
     conn.execute("""
     CREATE TABLE IF NOT EXISTS fm_tickets (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ref TEXT,
-    estate TEXT,
-    unit TEXT,
-    customer TEXT,
-    phone TEXT,
-    email TEXT,
-    address TEXT,
-    source TEXT,
-    priority TEXT,
-    category TEXT,
-    status TEXT,
-    summary TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ref TEXT,
+        estate TEXT,
+        unit TEXT,
+        customer TEXT,
+        phone TEXT,
+        email TEXT,
+        address TEXT,
+        source TEXT,
+        priority TEXT,
+        category TEXT,
+        status TEXT,
+        summary TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    # ===============================
+    # FM INBOUND EVENTS TABLE
+    # ===============================
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS fm_inbound_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        source TEXT,
+        sender TEXT,
+        message TEXT,
+        received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    # ===============================
+    # WHATSAPP SESSIONS TABLE
+    # ===============================
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS wa_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        wa_from TEXT,
+        display_name TEXT,
+        message_count INTEGER DEFAULT 0,
+        last_message_at TEXT,
+        status TEXT
     )
     """)
 
