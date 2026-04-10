@@ -152,9 +152,9 @@ def init_db():
 
     conn = get_engine_db()
 
-    # ===============================
-    # FM TICKETS TABLE
-    # ===============================
+    # -------------------------------
+    # FM TICKETS
+    # -------------------------------
     conn.execute("""
     CREATE TABLE IF NOT EXISTS fm_tickets (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -175,9 +175,37 @@ def init_db():
     )
     """)
 
-    # ===============================
-    # FM INBOUND EVENTS TABLE
-    # ===============================
+    # -------------------------------
+    # WHATSAPP SESSIONS
+    # -------------------------------
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS wa_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        wa_from TEXT,
+        display_name TEXT,
+        status TEXT,
+        last_message_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    # -------------------------------
+    # WHATSAPP MESSAGES  (THIS WAS MISSING)
+    # -------------------------------
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS wa_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id INTEGER,
+        direction TEXT,
+        body TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(session_id) REFERENCES wa_sessions(id)
+    )
+    """)
+
+    # -------------------------------
+    # FM INBOUND EVENTS
+    # -------------------------------
     conn.execute("""
     CREATE TABLE IF NOT EXISTS fm_inbound_events (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -188,23 +216,8 @@ def init_db():
     )
     """)
 
-    # ===============================
-    # WHATSAPP SESSIONS TABLE
-    # ===============================
-    conn.execute("""
-    CREATE TABLE IF NOT EXISTS wa_sessions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        wa_from TEXT,
-        display_name TEXT,
-        message_count INTEGER DEFAULT 0,
-        last_message_at TEXT,
-        status TEXT
-    )
-    """)
-
     conn.commit()
     conn.close()
-
 
 # run database setup
 with app.app_context():
