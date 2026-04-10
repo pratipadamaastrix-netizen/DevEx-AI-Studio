@@ -188,6 +188,10 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
+    # ensure wa_to column exists
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(wa_sessions)").fetchall()]
+    if "wa_to" not in cols:
+        conn.execute("ALTER TABLE wa_sessions ADD COLUMN wa_to TEXT")
 
     # -------------------------------
     # WHATSAPP MESSAGES  (THIS WAS MISSING)
