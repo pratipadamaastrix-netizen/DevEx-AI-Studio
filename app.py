@@ -348,7 +348,7 @@ def dx_studio_dashboard():
 @app.route('/studio/pipeline')
 def dx_studio_pipeline():
     """Alias: Studio Operations > Pipeline Console → existing FM dashboard."""
-    return fm_dashboard()
+    return redirect('/fm/dashboard')
 
 
 @app.route('/studio/import')
@@ -2067,11 +2067,11 @@ def ai_chat():
 
         session["history"].append({
             "role": "assistant",
-            "content": "Hi 👋 Welcome to Devex Studios! I'm your AI assistant.\n\nMay I know your name?"
+            "content": "Hello I'm your AI assistant.\n\nMay I know your name?"
         })
 
         return jsonify({
-            "reply": "Hi 👋 Welcome to Devex Studios! I'm your AI assistant.\n\nMay I know your name?"
+            "reply": "Hello I'm your AI assistant.\n\nMay I know your name?"
         })
 
     import re
