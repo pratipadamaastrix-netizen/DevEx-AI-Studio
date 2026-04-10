@@ -202,7 +202,10 @@ def init_db():
         FOREIGN KEY(session_id) REFERENCES wa_sessions(id)
     )
     """)
-
+    # ensure twilio_sid column exists
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(wa_messages)").fetchall()]
+    if "twilio_sid" not in cols:
+        conn.execute("ALTER TABLE wa_messages ADD COLUMN twilio_sid TEXT")
     # -------------------------------
     # FM INBOUND EVENTS
     # -------------------------------
