@@ -120,14 +120,9 @@ QUOTE_DB = ENGINE_DB_PATH
 # ---------------- DB CONNECTION ----------------
 
 def get_engine_db():
-    conn = sqlite3.connect(
-        ENGINE_DB_PATH,
-        timeout=30,
-        check_same_thread=False
-    )
+    """Get database connection for Engine/Artefact system"""
+    conn = sqlite3.connect(ENGINE_DB_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA busy_timeout=5000")
     return conn
 def get_quote_db():
     """Database connection for Quote Portal"""
@@ -137,6 +132,12 @@ def get_quote_db():
 from app_quote import register_quote_routes
 register_quote_routes(app, get_quote_db)
 
+WA_DB_PATH = os.path.join(DATA_DIR, "wa.db")
+def wa_get_db():
+    """Get database connection for WhatsApp sessions"""
+    conn = sqlite3.connect(WA_DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
 # --------- RUN DATABASE MIGRATIONS ON STARTUP ---------
 with app.app_context():
 
@@ -396,13 +397,12 @@ def dx_studio_dashboard():
 
     # Comms sessions
     try:
-        conn = get_engine_db()
-
-        comms_sessions = [dict(r) for r in conn.execute(
-            "SELECT wa_from, display_name, message_count, last_message_at, status FROM wa_sessions ORDER BY last_message_at DESC LIMIT 5"
+        wa_conn = wa_get_db()
+        comms_sessions = [dict(r) for r in wa_conn.execute(
+            "SELECT wa_from, display_name, message_count, last_message_at, status "
+            "FROM wa_sessions ORDER BY last_message_at DESC LIMIT 5"
         ).fetchall()]
-
-        conn.close()
+        wa_conn.close()
     except Exception:
         comms_sessions = []
 
@@ -5296,7 +5296,7 @@ WA_ACK_MSG = "Got it. Tell us more about your issue — estate, flat number, and
 
 def wa_get_db():
     """Return engine.db connection (same db as FM)."""
-    return get_engine_db()
+    return fm_get_db()
 
 
 # =========================================================================
@@ -5547,7 +5547,7 @@ def wa_flush_session(session_id: int, trigger: str = 'manual'):
     Flush a buffered session: build transcript, call DeepSeek, create FM ticket,
     send WhatsApp confirmation. Runs in a background thread.
     """
-    conn = get_engine_db()
+    conn = wa_get_db()
 
     session = conn.execute(
         "SELECT * FROM wa_sessions WHERE id = ?", (session_id,)
@@ -5689,7 +5689,7 @@ def _wa_timeout_watcher():
     while True:
         try:
             time.sleep(60)
-            conn = get_engine_db()
+            conn = wa_get_db()
             idle_sessions = conn.execute(
                 """SELECT id FROM wa_sessions
                    WHERE status = 'active'
@@ -5749,7 +5749,7 @@ def process_inbound_wa(wa_from, wa_to, body, message_sid,
     print(f"{label} from={wa_from} name={profile_name!r} body={body_display[:80]!r}")
 
     try:
-        conn = get_engine_db()
+        conn = wa_get_db()
 
         # ── Dedup by MessageSid (skip for empty or already-seen sids) ──
         if message_sid:
@@ -5948,7 +5948,7 @@ def _wa_twiml_response(message: str) -> str:
 def wa_api_sessions():
     """List WA sessions — for the monitor dashboard."""
     limit = int(request.args.get('limit', 50))
-    conn = get_engine_db()
+    conn  = wa_get_db()
     rows  = [dict(r) for r in conn.execute(
         """SELECT s.*, COUNT(m.id) as msg_count
            FROM wa_sessions s
@@ -5965,7 +5965,7 @@ def wa_api_sessions():
 @app.route('/wa/api/sessions/<int:session_id>', methods=['GET'])
 def wa_api_session_detail(session_id):
     """Get session + messages."""
-    conn = get_engine_db()
+    conn = wa_get_db()
     session = conn.execute("SELECT * FROM wa_sessions WHERE id=?", (session_id,)).fetchone()
     if not session:
         conn.close()
@@ -5997,7 +5997,7 @@ def wa_api_send_reply(session_id):
     if not body:
         return jsonify({'error': 'body required'}), 400
 
-    conn = get_engine_db()
+    conn = wa_get_db()
     session = conn.execute("SELECT wa_from FROM wa_sessions WHERE id=?", (session_id,)).fetchone()
     if not session:
         conn.close()
