@@ -230,6 +230,8 @@ def init_db():
     if "twilio_sid" not in cols:
         conn.execute("ALTER TABLE wa_messages ADD COLUMN twilio_sid TEXT")
 
+    if "media_url" not in cols:
+        conn.execute("ALTER TABLE wa_messages ADD COLUMN media_url TEXT")
     # ------------------------------------------------
     # FM INBOUND EVENTS
     # ------------------------------------------------
