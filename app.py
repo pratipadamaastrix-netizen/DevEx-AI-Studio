@@ -121,10 +121,8 @@ QUOTE_DB = ENGINE_DB_PATH
 
 def get_engine_db():
     """Get database connection for Engine/Artefact system"""
-    conn = sqlite3.connect(ENGINE_DB_PATH, timeout=30, check_same_thread=False)
+    conn = sqlite3.connect(ENGINE_DB_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA synchronous=NORMAL")
     return conn
 def get_quote_db():
     """Database connection for Quote Portal"""
@@ -136,16 +134,9 @@ register_quote_routes(app, get_quote_db)
 
 WA_DB_PATH = os.path.join(DATA_DIR, "wa.db")
 def wa_get_db():
-    conn = sqlite3.connect(
-        WA_DB_PATH,
-        timeout=30,
-        check_same_thread=False
-    )
+    """Get database connection for WhatsApp sessions"""
+    conn = sqlite3.connect(WA_DB_PATH)
     conn.row_factory = sqlite3.Row
-
-    # ✅ FIX LOCK ISSUE
-    conn.execute("PRAGMA journal_mode=WAL")
-
     return conn
 # --------- RUN DATABASE MIGRATIONS ON STARTUP ---------
 with app.app_context():
@@ -239,8 +230,6 @@ def init_db():
     if "twilio_sid" not in cols:
         conn.execute("ALTER TABLE wa_messages ADD COLUMN twilio_sid TEXT")
 
-    if "media_url" not in cols:
-        conn.execute("ALTER TABLE wa_messages ADD COLUMN media_url TEXT")
     # ------------------------------------------------
     # FM INBOUND EVENTS
     # ------------------------------------------------
