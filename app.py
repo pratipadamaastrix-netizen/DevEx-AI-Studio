@@ -433,7 +433,21 @@ def dx_studio_comms():
     """Alias: Studio Operations > Comms Monitor → WA monitor."""
     return render_template('wa/monitor.html', active_nav='wa_monitor')
 
+@app.route("/debug/db")
+def debug_db():
+    import sqlite3
 
+    conn = sqlite3.connect("data/engine.db")
+    cursor = conn.cursor()
+
+    tables = cursor.execute(
+        "SELECT name FROM sqlite_master WHERE type='table'"
+    ).fetchall()
+
+    return {
+        "tables": [t[0] for t in tables]
+    }
+    
 @app.route('/studio/quotes')
 def dx_studio_quotes():
     """
