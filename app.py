@@ -174,11 +174,35 @@ def init_db():
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
-
     # ------------------------------------------------
-    # WHATSAPP SESSIONS
+    # ARTEFACTS TABLE (FIX)
     # ------------------------------------------------
     conn.execute("""
+    CREATE TABLE IF NOT EXISTS artefacts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT,
+        artefact_type TEXT,
+        status TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    # Ensure columns exist (safe migration)
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(artefacts)").fetchall()]
+
+    if "title" not in cols:
+        conn.execute("ALTER TABLE artefacts ADD COLUMN title TEXT")
+
+    if "artefact_type" not in cols:
+        conn.execute("ALTER TABLE artefacts ADD COLUMN artefact_type TEXT")
+
+    if "status" not in cols:
+        conn.execute("ALTER TABLE artefacts ADD COLUMN status TEXT")
+        # ------------------------------------------------
+        # WHATSAPP SESSIONS
+        # ------------------------------------------------
+        conn.execute("""
     CREATE TABLE IF NOT EXISTS wa_sessions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         wa_from TEXT,
