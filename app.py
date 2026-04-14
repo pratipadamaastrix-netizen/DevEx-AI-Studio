@@ -41,7 +41,13 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 import PyPDF2
 # import app_spec
 # import app_rooms
+import os
 
+DB_PATH = os.path.join("data", "engine.db")
+
+if os.path.exists(DB_PATH):
+    os.remove(DB_PATH)
+    print("Old DB deleted")
 # ── Rate limiting ─────────────────────────────────────────────────────────
 try:
     from flask_limiter import Limiter
@@ -132,7 +138,7 @@ def get_quote_db():
 from app_quote import register_quote_routes
 register_quote_routes(app, get_quote_db)
 
-WA_DB_PATH = os.path.join(DATA_DIR, "wa.db")
+WA_DB_PATH = ENGINE_DB_PATH
 def wa_get_db():
     """Get database connection for WhatsApp sessions"""
     conn = sqlite3.connect(WA_DB_PATH)
@@ -243,6 +249,7 @@ def init_db():
         twilio_sid TEXT,
         direction TEXT,
         body TEXT,
+        media_url TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(session_id) REFERENCES wa_sessions(id)
     )
@@ -251,6 +258,9 @@ def init_db():
     # Safe migration for old schema
     cols = [r[1] for r in conn.execute("PRAGMA table_info(wa_messages)").fetchall()]
 
+    if "media_url" not in cols:
+        conn.execute("ALTER TABLE wa_messages ADD COLUMN media_url TEXT")
+    
     if "twilio_sid" not in cols:
         conn.execute("ALTER TABLE wa_messages ADD COLUMN twilio_sid TEXT")
 
@@ -773,10 +783,6 @@ def get_db():
     """DEPRECATED: Use get_fire_door_db() or get_engine_db() instead
     For backward compatibility, defaults to engine DB"""
     return get_engine_db()
-
-def init_db():
-    """Initialize databases - CF1.1 Physical split"""
-    print("Initializing databases...")
     
     # ===== ENGINE DATABASE =====
     engine_exists = os.path.exists(ENGINE_DB_PATH)
