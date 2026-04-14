@@ -243,7 +243,7 @@ def init_db():
         body TEXT,
         media_url TEXT,
         media_type TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(session_id) REFERENCES wa_sessions(id)
     )
     """)
@@ -251,6 +251,9 @@ def init_db():
     # Safe migration for old schema
     cols = [r[1] for r in conn.execute("PRAGMA table_info(wa_messages)").fetchall()]
 
+    if "received_at" not in cols:
+        conn.execute("ALTER TABLE wa_messages ADD COLUMN received_at TIMESTAMP")
+    
     if "media_url" not in cols:
         conn.execute("ALTER TABLE wa_messages ADD COLUMN media_url TEXT")
         
@@ -276,16 +279,16 @@ def init_db():
     # MEETING ROOMS TABLE
     conn.execute("""
     CREATE TABLE IF NOT EXISTS meeting_rooms (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    location TEXT,
-    capacity INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        location TEXT,
+        capacity INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
     
-    # spec_scopes
+    # SPEC SCOPES TABLE
     conn.execute("""
     CREATE TABLE IF NOT EXISTS spec_scopes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -6210,12 +6213,10 @@ if __name__ == '__main__':
     print('\n' + '='*60)
     print('DEVEX AI STUDIOS PLATFORM - VERSION 1.0.0')
     print('='*60)
-    
-    init_db()
-    
+
     print('\nServer starting on http://0.0.0.0:5000 ...')
     print('Press Ctrl+C to stop\n')
-    
+
     app.run(debug=True, host='0.0.0.0', port=5000)
 
 
