@@ -242,6 +242,7 @@ def init_db():
         direction TEXT,
         body TEXT,
         media_url TEXT,
+        media_type TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(session_id) REFERENCES wa_sessions(id)
     )
@@ -252,6 +253,9 @@ def init_db():
 
     if "media_url" not in cols:
         conn.execute("ALTER TABLE wa_messages ADD COLUMN media_url TEXT")
+        
+    if "media_type" not in cols:
+        conn.execute("ALTER TABLE wa_messages ADD COLUMN media_type TEXT")
     
     if "twilio_sid" not in cols:
         conn.execute("ALTER TABLE wa_messages ADD COLUMN twilio_sid TEXT")
@@ -269,6 +273,47 @@ def init_db():
     )
     """)
 
+    # MEETING ROOMS TABLE
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS meeting_rooms (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    location TEXT,
+    capacity INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+    
+    # spec_scopes
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS spec_scopes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+    # clients
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS clients (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        email TEXT,
+        phone TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+    # Services
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS services (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        price REAL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
     conn.commit()
     conn.close()
 
