@@ -208,7 +208,8 @@ def init_db():
         # ------------------------------------------------
         # WHATSAPP SESSIONS
         # ------------------------------------------------
-        conn.execute("""
+        # Ensure wa_sessions table exists FIRST
+    conn.execute("""
     CREATE TABLE IF NOT EXISTS wa_sessions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         wa_from TEXT,
@@ -221,7 +222,7 @@ def init_db():
     )
     """)
 
-    # Safe migration for older databases
+    # Now safe migration
     cols = [r[1] for r in conn.execute("PRAGMA table_info(wa_sessions)").fetchall()]
 
     if "wa_to" not in cols:
